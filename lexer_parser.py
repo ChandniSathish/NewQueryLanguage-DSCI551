@@ -77,7 +77,8 @@ def p_query(p):
              | EXTRACT select_list USING table_list when_clause categorize_by_clause
              | EXTRACT select_list USING table_list when_clause like_clause
              | EXTRACT select_list USING table_list when_clause limit_clause
-             | EXTRACT select_list USING table_list when_clause limit_clause rank_clause'''
+             | EXTRACT select_list USING table_list when_clause limit_clause rank_clause
+             | EXTRACT select_list USING table_list when_clause'''
     p[0] = {
         'extract': p[2],
         'using': p[4],
