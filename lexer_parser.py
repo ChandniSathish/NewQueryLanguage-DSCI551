@@ -13,7 +13,12 @@ tokens = (
     'STRING',
     'COMMA',
     'EQUALS',
-    'LIKE',  # New token for the LIKE operator
+    'LIKE',
+    'LIMIT',
+    'NUMBER',
+    'RANK',
+    'ASCENDING',
+    'DESCENDING'
 )
 
 # Define regular expressions for simple tokens
@@ -27,6 +32,10 @@ t_COMMA = r','
 t_EQUALS = r'='
 t_LIKE = r'LIKE'  # Regular expression for the LIKE operator
 t_ignore = ' \t'
+t_LIMIT = r'LIMIT'
+t_RANK = r'RANK'
+t_ASCENDING = r'ASCENDING'
+t_DESCENDING = r'DESCENDING'
 
 # A regular expression for identifiers (table and column names)
 def t_IDENTIFIER(t):
@@ -47,8 +56,12 @@ reserved = {
     'USING': 'USING',
     'WHEN': 'WHEN',
     'CATEGORIZE': 'CATEGORIZE',
-    'BY': 'BY',
     'LIKE': 'LIKE',
+    'LIMIT': 'LIMIT',
+    'RANK': 'RANK',
+    'ASCENDING': 'ASCENDING',  # Synonym for ASC
+    'DESCENDING':'DESCENDING',
+    'BY': 'BY'
 }
 
 # Error handling for unknown characters
@@ -63,14 +76,46 @@ def p_query(p):
     '''query : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause
              | EXTRACT select_list USING table_list when_clause categorize_by_clause
              | EXTRACT select_list USING table_list when_clause like_clause
-             | EXTRACT select_list USING table_list when_clause'''
+             | EXTRACT select_list USING table_list when_clause limit_clause
+             | EXTRACT select_list USING table_list when_clause limit_clause rank_clause'''
     p[0] = {
         'extract': p[2],
         'using': p[4],
         'when': p[5],
         'categorize_by': p[6] if len(p) > 6 and p[6] else None,
         'like': p[7] if len(p) > 7 and p[7] else None,
+        'limit': p[6],
+        'rank': p[7]
     }
+
+def p_rank_clause(p):
+    '''rank_clause : RANK BY rank_by rank_direction
+                    | empty'''
+    if len(p) == 4:
+        p[0] = {
+            'rank_by': p[3]['column'],
+            'rank_direction': p[3]['direction']
+        }
+    else:
+        p[0] = None
+
+def p_rank_by(p):
+    '''rank_by : IDENTIFIER'''
+    p[0] = {'column': p[1]}
+
+def p_rank_direction(p):
+    '''rank_direction : ASCENDING
+                       | DESCENDING'''
+    p[0] = {'direction': p[1]}
+
+def p_limit_clause(p):
+    '''limit_clause : LIMIT NUMBER
+                    | empty'''
+    print()
+    if len(p) == 3:
+        p[0] = p[2]
+    else:
+        p[0] = None
 
 def p_select_list(p):
     '''select_list : DOLLAR
