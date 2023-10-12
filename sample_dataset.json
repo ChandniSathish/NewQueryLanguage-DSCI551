@@ -1,0 +1,27 @@
+[
+    {
+        "SampleID": "Sample1",
+        "Gene": "GeneA",
+        "Expression": 4.1
+    },
+    {
+        "SampleID": "Sample2",
+        "Gene": "GeneA",
+        "Expression": 7.4
+    },
+    {
+        "SampleID": "Sample3",
+        "Gene": "GeneB",
+        "Expression": 3.3
+    },
+    {
+        "SampleID": "Sample4",
+        "Gene": "GeneB",
+        "Expression": 2.5
+    },
+    {
+        "SampleID": "Sample5",
+        "Gene": "GeneC",
+        "Expression": 8.2
+    }
+]
