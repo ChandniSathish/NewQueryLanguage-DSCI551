@@ -13,7 +13,9 @@ tokens = (
     'STRING',
     'COMMA',
     'EQUALS',
-    'LIKE',  # New token for the LIKE operator
+    'LIKE',
+    'BOUND',  # New token for the LIMIT clause
+    'NUMBER',  # A token for numeric values in LIMIT
 )
 
 # Define regular expressions for simple tokens
@@ -25,7 +27,10 @@ t_CATEGORIZE = r'CATEGORIZE'
 t_BY = r'BY'
 t_COMMA = r','
 t_EQUALS = r'='
-t_LIKE = r'LIKE'  # Regular expression for the LIKE operator
+t_LIKE = r'LIKE'
+t_BOUND = r'BOUND'  # Regular expression for the LIMIT token
+t_NUMBER = r'\d+'  # Match one or more digits as a number
+
 t_ignore = ' \t'
 
 # A regular expression for identifiers (table and column names)
@@ -49,6 +54,7 @@ reserved = {
     'CATEGORIZE': 'CATEGORIZE',
     'BY': 'BY',
     'LIKE': 'LIKE',
+    'BOUND': 'BOUND',  # Include LIMIT as a reserved word
 }
 
 # Error handling for unknown characters
@@ -60,16 +66,21 @@ def t_error(t):
 lexer = lex.lex()
 
 def p_query(p):
-    '''query : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause
+    '''query : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause limit_clause
+             | EXTRACT select_list USING table_list when_clause categorize_by_clause limit_clause
+             | EXTRACT select_list USING table_list when_clause like_clause limit_clause
+             | EXTRACT select_list USING table_list when_clause limit_clause
              | EXTRACT select_list USING table_list when_clause categorize_by_clause
-             | EXTRACT select_list USING table_list when_clause like_clause
-             | EXTRACT select_list USING table_list when_clause'''
+             | EXTRACT select_list USING table_list when_clause
+             | EXTRACT select_list USING table_list limit_clause
+             | EXTRACT select_list USING table_list'''
     p[0] = {
         'extract': p[2],
         'using': p[4],
         'when': p[5],
         'categorize_by': p[6] if len(p) > 6 and p[6] else None,
         'like': p[7] if len(p) > 7 and p[7] else None,
+        'bound': p[8] if len(p) > 8 and p[8] else None,
     }
 
 def p_select_list(p):
@@ -104,6 +115,12 @@ def p_like_clause(p):
     p[0] = {
         'operator': 'LIKE',
         'pattern': p[2],
+    }
+
+def p_limit_clause(p):
+    '''limit_clause : BOUND NUMBER'''
+    p[0] = {
+        'bound': int(p[2])  # Convert the number to an integer
     }
 
 def p_condition(p):
