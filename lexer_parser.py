@@ -1,5 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
+import pandas as pd
+import numpy as np
+
 
 # Define the list of token names
 tokens = (
@@ -188,6 +191,71 @@ def parse_query(query):
     result = parser.parse(query)
     return result
 
+def parsed_query_mapping(parsed_query):
+    print("yooooooooooo")
+    data = {
+        'table1': {
+            'column1': [10, 20, 30, 40, 60],
+            'column2': [10, 20, 30, 40, 50],
+        }
+    }
+
+    # Parsed query
+    parsed_query = {
+        'extract': ['column1', 'column2'],
+        'using': 'table1',
+        'when': {'left': 'column1', 'operator': '>=', 'right': 'column2'},
+        'categorize_by': ['column1'],
+        'like': None,
+        'bound': None
+    }
+
+    # Initialize an empty result dictionary
+    result = {}
+    operators = {
+        '=': lambda x, y: x == y,
+        '>': lambda x, y: x > y,
+        '<': lambda x, y: x < y,
+        '>=': lambda x, y: x >= y,
+        '<=': lambda x, y: x <= y,
+    }
+
+    # Extract the selected columns
+    selected_columns = parsed_query['extract']
+
+    # Get the table name from the query
+    table_name = parsed_query['using']
+
+    # Filter the dataset based on the 'when' condition
+    left_column = parsed_query['when']['left']
+    operator = parsed_query['when']['operator']
+    right_column = parsed_query['when']['right']
+
+    data_table = data[table_name]
+    filtered_indices = [i for i in range(len(data_table[left_column])) if operators[operator](data_table[left_column][i], data_table[right_column][i])]
+    print("filteredddd",filtered_indices)
+
+    # Apply categorization
+    categorized_by = parsed_query['categorize_by']
+    if categorized_by:
+        categories = set(data_table[categorized_by[0]])
+        categorized_data = {}
+        for category in categories:
+            category_data = {}
+            for col in selected_columns:
+                category_data[col] = [data_table[col][i] for i in range(len(data_table[col])) if i in filtered_indices and data_table[categorized_by[0]][i] == category]
+            categorized_data[category] = category_data
+        result[table_name] = categorized_data
+    else:
+        result[table_name] = {col: [data_table[col][i] for i in filtered_indices] for col in selected_columns}
+
+    # Print the result
+    print(result)
+    return result
+
+
+
+
 # Main program
 if __name__ == "__main__":
     while True:
@@ -202,6 +270,10 @@ if __name__ == "__main__":
             parsed_query = parse_query(query)
             print("Parsed Query:")
             print(parsed_query)
+            print("immaa cryy")
+            result = parsed_query_mapping(parsed_query)
+            print(result)
+
         except Exception as e:
             print(f"An error occurred: {e}")
 
