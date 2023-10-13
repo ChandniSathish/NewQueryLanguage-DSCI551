@@ -14,8 +14,8 @@ tokens = (
     'COMMA',
     'EQUALS',
     'LIKE',
-    'BOUND',  # New token for the LIMIT clause
-    'NUMBER',  # A token for numeric values in LIMIT
+    'BOUND',  
+    'NUMBER',  
 )
 
 # Define regular expressions for simple tokens
@@ -54,7 +54,7 @@ reserved = {
     'CATEGORIZE': 'CATEGORIZE',
     'BY': 'BY',
     'LIKE': 'LIKE',
-    'BOUND': 'BOUND',  # Include LIMIT as a reserved word
+    'BOUND': 'BOUND',  
 }
 
 # Error handling for unknown characters
