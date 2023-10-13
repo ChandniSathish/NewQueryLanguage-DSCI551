@@ -9,13 +9,16 @@ tokens = (
     'WHEN',
     'CATEGORIZE',
     'BY',
+    'RANK',
+    'ASC',
+    'DESC',
     'IDENTIFIER',
     'STRING',
     'COMMA',
     'EQUALS',
     'LIKE',
-    'BOUND',  
-    'NUMBER',  
+    'BOUND',
+    'NUMBER',
 )
 
 # Define regular expressions for simple tokens
@@ -25,11 +28,14 @@ t_USING = r'USING'
 t_WHEN = r'WHEN'
 t_CATEGORIZE = r'CATEGORIZE'
 t_BY = r'BY'
+t_RANK = r'RANK'
+t_ASC = r'ASC'
+t_DESC = r'DESC'
 t_COMMA = r','
 t_EQUALS = r'='
 t_LIKE = r'LIKE'
-t_BOUND = r'BOUND'  # Regular expression for the LIMIT token
-t_NUMBER = r'\d+'  # Match one or more digits as a number
+t_BOUND = r'BOUND'
+t_NUMBER = r'\d+'
 
 t_ignore = ' \t'
 
@@ -54,7 +60,10 @@ reserved = {
     'CATEGORIZE': 'CATEGORIZE',
     'BY': 'BY',
     'LIKE': 'LIKE',
-    'BOUND': 'BOUND',  
+    'BOUND': 'BOUND',
+    'RANK': 'RANK',
+    'ASC': 'ASC',
+    'DESC': 'DESC',
 }
 
 # Error handling for unknown characters
@@ -65,13 +74,22 @@ def t_error(t):
 # Build the lexer
 lexer = lex.lex()
 
+# Parsing rules
 def p_query(p):
-    '''query : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause limit_clause
-             | EXTRACT select_list USING table_list when_clause categorize_by_clause limit_clause
-             | EXTRACT select_list USING table_list when_clause like_clause limit_clause
-             | EXTRACT select_list USING table_list when_clause limit_clause
+    '''query : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause limit_clause order_clause
+             | EXTRACT select_list USING table_list when_clause categorize_by_clause limit_clause order_clause
+             | EXTRACT select_list USING table_list when_clause like_clause limit_clause order_clause
+             | EXTRACT select_list USING table_list when_clause limit_clause order_clause
+             | EXTRACT select_list USING table_list when_clause categorize_by_clause order_clause
+             | EXTRACT select_list USING table_list when_clause order_clause
+             | EXTRACT select_list USING table_list limit_clause order_clause
+             | EXTRACT select_list USING table_list order_clause
+             | EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause
+             | EXTRACT select_list USING table_list when_clause like_clause
              | EXTRACT select_list USING table_list when_clause categorize_by_clause
              | EXTRACT select_list USING table_list when_clause
+             | EXTRACT select_list USING table_list like_clause
+             | EXTRACT select_list USING table_list categorize_by_clause
              | EXTRACT select_list USING table_list limit_clause
              | EXTRACT select_list USING table_list'''
     p[0] = {
@@ -81,6 +99,7 @@ def p_query(p):
         'categorize_by': p[6] if len(p) > 6 and p[6] else None,
         'like': p[7] if len(p) > 7 and p[7] else None,
         'bound': p[8] if len(p) > 8 and p[8] else None,
+        'rank_by': p[9] if len(p) > 9 and p[9] else None,
     }
 
 def p_select_list(p):
@@ -103,12 +122,17 @@ def p_when_clause(p):
     p[0] = p[2]
 
 def p_categorize_by_clause(p):
-    '''categorize_by_clause : CATEGORIZE BY IDENTIFIER
-                            | CATEGORIZE BY IDENTIFIER COMMA IDENTIFIER'''
-    if len(p) == 4:
-        p[0] = [p[3]]
+    '''categorize_by_clause : CATEGORIZE BY column_list'''
+    p[0] = p[3]
+
+def p_column_list(p):
+    '''column_list : IDENTIFIER
+                   | column_list COMMA IDENTIFIER'''
+    if len(p) == 2:
+        p[0] = [p[1]]
     else:
-        p[0] = [p[3], p[5]]
+        p[1].append(p[3])
+        p[0] = p[1]
 
 def p_like_clause(p):
     '''like_clause : LIKE STRING'''
@@ -122,6 +146,18 @@ def p_limit_clause(p):
     p[0] = {
         'bound': int(p[2])  # Convert the number to an integer
     }
+
+def p_order_clause(p):
+    '''order_clause : RANK BY IDENTIFIER order_direction'''
+    p[0] = {
+        'column': p[3],
+        'rank': p[4],
+    }
+
+def p_order_direction(p):
+    '''order_direction : ASC
+                       | DESC'''
+    p[0] = p[1]
 
 def p_condition(p):
     '''condition : IDENTIFIER EQUALS IDENTIFIER
@@ -168,3 +204,4 @@ if __name__ == "__main__":
             print(parsed_query)
         except Exception as e:
             print(f"An error occurred: {e}")
+
