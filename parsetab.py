@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'ASCENDING BY CATEGORIZE COMMA DESCENDING DOLLAR EQUALS EXTRACT IDENTIFIER LIKE LIMIT NUMBER RANK STRING USING WHENquery : EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause\n             | EXTRACT select_list USING table_list when_clause categorize_by_clause\n             | EXTRACT select_list USING table_list when_clause like_clauseselect_list : DOLLAR\n                   | select_list COMMA DOLLAR\n                   | IDENTIFIER\n                   | select_list COMMA IDENTIFIERtable_list : IDENTIFIERwhen_clause : WHEN conditioncategorize_by_clause : CATEGORIZE BY IDENTIFIER\n                            | CATEGORIZE BY IDENTIFIER COMMA IDENTIFIERlike_clause : LIKE STRINGcondition : IDENTIFIER EQUALS IDENTIFIER\n                 | IDENTIFIER EQUALS STRING\n                 | IDENTIFIER LIKE STRING'
+_lr_signature = 'ASC AVERAGE BOUND BY CATEGORIZE COMMA DESC DOLLAR EQUALS EXTRACT GE GT IDENTIFIER LE LIKE LT MAX MIN NUMBER PROJECT RANK STRING SUM USING WHENquery : EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum\n    select_list : DOLLAR\n                   | select_list COMMA DOLLAR\n                   | IDENTIFIER\n                   | select_list COMMA IDENTIFIERtable_list : IDENTIFIERmaybe_when : WHEN condition\n                  |\n    maybe_categorize_by : CATEGORIZE BY column_list\n                          |\n    maybe_like : LIKE STRING\n                  |\n    maybe_bound : BOUND NUMBER\n                  |\n    maybe_average : AVERAGE BY IDENTIFIER\n                   |\n    maybe_project : PROJECT project_list\n                  |\n    project_list : IDENTIFIER\n                   | project_list COMMA IDENTIFIERmaybe_rank : RANK BY IDENTIFIER maybe_order_direction\n                  |\n    maybe_order_direction : ASC\n                             | DESC\n                             |\n    column_list : IDENTIFIER\n                   | column_list COMMA IDENTIFIERcondition : IDENTIFIER EQUALS IDENTIFIER\n                 | IDENTIFIER EQUALS STRING\n                 | IDENTIFIER LIKE STRING\n                 | IDENTIFIER GT NUMBER\n                 | IDENTIFIER LT NUMBER\n                 | IDENTIFIER GE NUMBER\n                 | IDENTIFIER LE NUMBER\n    maybe_min : MIN BY IDENTIFIERmaybe_max : MAX BY IDENTIFIERmaybe_sum : SUM BY IDENTIFIER\n                |\n    '
     
-_lr_action_items = {'EXTRACT':([0,],[2,]),'$end':([1,14,15,20,22,25,30,],[0,-2,-3,-1,-12,-10,-11,]),'DOLLAR':([2,7,],[4,10,]),'IDENTIFIER':([2,6,7,13,21,23,29,],[5,9,11,19,25,26,30,]),'USING':([3,4,5,10,11,],[6,-4,-6,-5,-7,]),'COMMA':([3,4,5,10,11,25,],[7,-4,-6,-5,-7,29,]),'WHEN':([8,9,],[13,-8,]),'CATEGORIZE':([12,18,26,27,28,],[16,-9,-13,-14,-15,]),'LIKE':([12,14,18,19,25,26,27,28,30,],[17,17,-9,24,-10,-13,-14,-15,-11,]),'BY':([16,],[21,]),'STRING':([17,23,24,],[22,27,28,]),'EQUALS':([19,],[23,]),}
+_lr_action_items = {'EXTRACT':([0,],[2,]),'$end':([1,59,64,69,70,],[0,-38,-1,-36,-37,]),'DOLLAR':([2,7,],[4,10,]),'IDENTIFIER':([2,6,7,13,20,21,42,44,45,54,55,61,66,68,],[5,9,11,17,31,32,46,50,51,62,63,67,69,70,]),'USING':([3,4,5,10,11,],[6,-2,-4,-3,-5,]),'COMMA':([3,4,5,10,11,30,31,46,49,50,63,],[7,-2,-4,-3,-5,42,-26,-27,55,-19,-20,]),'WHEN':([8,9,],[13,-6,]),'CATEGORIZE':([8,9,12,16,32,33,34,35,36,37,38,],[-8,-6,15,-7,-28,-29,-30,-31,-32,-33,-34,]),'LIKE':([8,9,12,14,16,17,30,31,32,33,34,35,36,37,38,46,],[-8,-6,-10,19,-7,22,-9,-26,-28,-29,-30,-31,-32,-33,-34,-27,]),'BOUND':([8,9,12,14,16,18,29,30,31,32,33,34,35,36,37,38,46,],[-8,-6,-10,-12,-7,28,-11,-9,-26,-28,-29,-30,-31,-32,-33,-34,-27,]),'RANK':([8,9,12,14,16,18,27,29,30,31,32,33,34,35,36,37,38,41,46,],[-8,-6,-10,-12,-7,-14,40,-11,-9,-26,-28,-29,-30,-31,-32,-33,-34,-13,-27,]),'PROJECT':([8,9,12,14,16,18,27,29,30,31,32,33,34,35,36,37,38,39,41,46,51,56,57,58,],[-8,-6,-10,-12,-7,-14,-22,-11,-9,-26,-28,-29,-30,-31,-32,-33,-34,44,-13,-27,-25,-21,-23,-24,]),'AVERAGE':([8,9,12,14,16,18,27,29,30,31,32,33,34,35,36,37,38,39,41,43,46,49,50,51,56,57,58,63,],[-8,-6,-10,-12,-7,-14,-22,-11,-9,-26,-28,-29,-30,-31,-32,-33,-34,-18,-13,48,-27,-17,-19,-25,-21,-23,-24,-20,]),'MIN':([8,9,12,14,16,18,27,29,30,31,32,33,34,35,36,37,38,39,41,43,46,47,49,50,51,56,57,58,62,63,],[-8,-6,-10,-12,-7,-14,-22,-11,-9,-26,-28,-29,-30,-31,-32,-33,-34,-18,-13,-16,-27,53,-17,-19,-25,-21,-23,-24,-15,-20,]),'BY':([15,40,48,53,60,65,],[20,45,54,61,66,68,]),'EQUALS':([17,],[21,]),'GT':([17,],[23,]),'LT':([17,],[24,]),'GE':([17,],[25,]),'LE':([17,],[26,]),'STRING':([19,21,22,],[29,33,34,]),'NUMBER':([23,24,25,26,28,],[35,36,37,38,41,]),'ASC':([51,],[57,]),'DESC':([51,],[58,]),'MAX':([52,67,],[60,-35,]),'SUM':([59,69,],[65,-36,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'query':([0,],[1,]),'select_list':([2,],[3,]),'table_list':([6,],[8,]),'when_clause':([8,],[12,]),'categorize_by_clause':([12,],[14,]),'like_clause':([12,14,],[15,20,]),'condition':([13,],[18,]),}
+_lr_goto_items = {'query':([0,],[1,]),'select_list':([2,],[3,]),'table_list':([6,],[8,]),'maybe_when':([8,],[12,]),'maybe_categorize_by':([12,],[14,]),'condition':([13,],[16,]),'maybe_like':([14,],[18,]),'maybe_bound':([18,],[27,]),'column_list':([20,],[30,]),'maybe_rank':([27,],[39,]),'maybe_project':([39,],[43,]),'maybe_average':([43,],[47,]),'project_list':([44,],[49,]),'maybe_min':([47,],[52,]),'maybe_order_direction':([51,],[56,]),'maybe_max':([52,],[59,]),'maybe_sum':([59,],[64,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,19 +27,42 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> query","S'",1,None,None,None),
-  ('query -> EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause','query',7,'p_query','lexer_parser.py',76),
-  ('query -> EXTRACT select_list USING table_list when_clause categorize_by_clause','query',6,'p_query','lexer_parser.py',77),
-  ('query -> EXTRACT select_list USING table_list when_clause like_clause','query',6,'p_query','lexer_parser.py',78),
-  ('select_list -> DOLLAR','select_list',1,'p_select_list','lexer_parser.py',119),
-  ('select_list -> select_list COMMA DOLLAR','select_list',3,'p_select_list','lexer_parser.py',120),
-  ('select_list -> IDENTIFIER','select_list',1,'p_select_list','lexer_parser.py',121),
-  ('select_list -> select_list COMMA IDENTIFIER','select_list',3,'p_select_list','lexer_parser.py',122),
-  ('table_list -> IDENTIFIER','table_list',1,'p_table_list','lexer_parser.py',130),
-  ('when_clause -> WHEN condition','when_clause',2,'p_when_clause','lexer_parser.py',134),
-  ('categorize_by_clause -> CATEGORIZE BY IDENTIFIER','categorize_by_clause',3,'p_categorize_by_clause','lexer_parser.py',138),
-  ('categorize_by_clause -> CATEGORIZE BY IDENTIFIER COMMA IDENTIFIER','categorize_by_clause',5,'p_categorize_by_clause','lexer_parser.py',139),
-  ('like_clause -> LIKE STRING','like_clause',2,'p_like_clause','lexer_parser.py',146),
-  ('condition -> IDENTIFIER EQUALS IDENTIFIER','condition',3,'p_condition','lexer_parser.py',153),
-  ('condition -> IDENTIFIER EQUALS STRING','condition',3,'p_condition','lexer_parser.py',154),
-  ('condition -> IDENTIFIER LIKE STRING','condition',3,'p_condition','lexer_parser.py',155),
+  ('query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum','query',14,'p_query','lexer_parser.py',104),
+  ('select_list -> DOLLAR','select_list',1,'p_select_list','lexer_parser.py',122),
+  ('select_list -> select_list COMMA DOLLAR','select_list',3,'p_select_list','lexer_parser.py',123),
+  ('select_list -> IDENTIFIER','select_list',1,'p_select_list','lexer_parser.py',124),
+  ('select_list -> select_list COMMA IDENTIFIER','select_list',3,'p_select_list','lexer_parser.py',125),
+  ('table_list -> IDENTIFIER','table_list',1,'p_table_list','lexer_parser.py',133),
+  ('maybe_when -> WHEN condition','maybe_when',2,'p_maybe_when','lexer_parser.py',137),
+  ('maybe_when -> <empty>','maybe_when',0,'p_maybe_when','lexer_parser.py',138),
+  ('maybe_categorize_by -> CATEGORIZE BY column_list','maybe_categorize_by',3,'p_maybe_categorize_by','lexer_parser.py',143),
+  ('maybe_categorize_by -> <empty>','maybe_categorize_by',0,'p_maybe_categorize_by','lexer_parser.py',144),
+  ('maybe_like -> LIKE STRING','maybe_like',2,'p_maybe_like','lexer_parser.py',149),
+  ('maybe_like -> <empty>','maybe_like',0,'p_maybe_like','lexer_parser.py',150),
+  ('maybe_bound -> BOUND NUMBER','maybe_bound',2,'p_maybe_bound','lexer_parser.py',161),
+  ('maybe_bound -> <empty>','maybe_bound',0,'p_maybe_bound','lexer_parser.py',162),
+  ('maybe_average -> AVERAGE BY IDENTIFIER','maybe_average',3,'p_maybe_average','lexer_parser.py',172),
+  ('maybe_average -> <empty>','maybe_average',0,'p_maybe_average','lexer_parser.py',173),
+  ('maybe_project -> PROJECT project_list','maybe_project',2,'p_maybe_project','lexer_parser.py',183),
+  ('maybe_project -> <empty>','maybe_project',0,'p_maybe_project','lexer_parser.py',184),
+  ('project_list -> IDENTIFIER','project_list',1,'p_project_list','lexer_parser.py',189),
+  ('project_list -> project_list COMMA IDENTIFIER','project_list',3,'p_project_list','lexer_parser.py',190),
+  ('maybe_rank -> RANK BY IDENTIFIER maybe_order_direction','maybe_rank',4,'p_maybe_rank','lexer_parser.py',198),
+  ('maybe_rank -> <empty>','maybe_rank',0,'p_maybe_rank','lexer_parser.py',199),
+  ('maybe_order_direction -> ASC','maybe_order_direction',1,'p_maybe_order_direction','lexer_parser.py',210),
+  ('maybe_order_direction -> DESC','maybe_order_direction',1,'p_maybe_order_direction','lexer_parser.py',211),
+  ('maybe_order_direction -> <empty>','maybe_order_direction',0,'p_maybe_order_direction','lexer_parser.py',212),
+  ('column_list -> IDENTIFIER','column_list',1,'p_column_list','lexer_parser.py',218),
+  ('column_list -> column_list COMMA IDENTIFIER','column_list',3,'p_column_list','lexer_parser.py',219),
+  ('condition -> IDENTIFIER EQUALS IDENTIFIER','condition',3,'p_condition','lexer_parser.py',227),
+  ('condition -> IDENTIFIER EQUALS STRING','condition',3,'p_condition','lexer_parser.py',228),
+  ('condition -> IDENTIFIER LIKE STRING','condition',3,'p_condition','lexer_parser.py',229),
+  ('condition -> IDENTIFIER GT NUMBER','condition',3,'p_condition','lexer_parser.py',230),
+  ('condition -> IDENTIFIER LT NUMBER','condition',3,'p_condition','lexer_parser.py',231),
+  ('condition -> IDENTIFIER GE NUMBER','condition',3,'p_condition','lexer_parser.py',232),
+  ('condition -> IDENTIFIER LE NUMBER','condition',3,'p_condition','lexer_parser.py',233),
+  ('maybe_min -> MIN BY IDENTIFIER','maybe_min',3,'p_maybe_min','lexer_parser.py',256),
+  ('maybe_max -> MAX BY IDENTIFIER','maybe_max',3,'p_maybe_max','lexer_parser.py',263),
+  ('maybe_sum -> SUM BY IDENTIFIER','maybe_sum',3,'p_maybe_sum','lexer_parser.py',270),
+  ('maybe_sum -> <empty>','maybe_sum',0,'p_maybe_sum','lexer_parser.py',271),
 ]

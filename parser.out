@@ -3,64 +3,794 @@ Created by PLY version 3.11 (http://www.dabeaz.com/ply)
 Grammar
 
 Rule 0     S' -> query
-Rule 1     query -> EXTRACT select_list USING table_list when_clause categorize_by_clause like_clause
-Rule 2     query -> EXTRACT select_list USING table_list when_clause categorize_by_clause
-Rule 3     query -> EXTRACT select_list USING table_list when_clause like_clause
-Rule 4     query -> EXTRACT select_list USING table_list when_clause limit_clause
-Rule 5     query -> EXTRACT select_list USING table_list when_clause limit_clause rank_clause
-Rule 6     query -> EXTRACT select_list USING table_list when_clause
-Rule 7     rank_clause -> RANK BY rank_by rank_direction
-Rule 8     rank_clause -> empty
-Rule 9     rank_by -> IDENTIFIER
-Rule 10    rank_direction -> ASCENDING
-Rule 11    rank_direction -> DESCENDING
-Rule 12    limit_clause -> LIMIT NUMBER
-Rule 13    limit_clause -> empty
-Rule 14    select_list -> DOLLAR
-Rule 15    select_list -> select_list COMMA DOLLAR
-Rule 16    select_list -> IDENTIFIER
-Rule 17    select_list -> select_list COMMA IDENTIFIER
-Rule 18    table_list -> IDENTIFIER
-Rule 19    when_clause -> WHEN condition
-Rule 20    categorize_by_clause -> CATEGORIZE BY IDENTIFIER
-Rule 21    categorize_by_clause -> CATEGORIZE BY IDENTIFIER COMMA IDENTIFIER
-Rule 22    like_clause -> LIKE STRING
-Rule 23    condition -> IDENTIFIER EQUALS IDENTIFIER
-Rule 24    condition -> IDENTIFIER EQUALS STRING
-Rule 25    condition -> IDENTIFIER LIKE STRING
+Rule 1     query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+Rule 2     select_list -> DOLLAR
+Rule 3     select_list -> select_list COMMA DOLLAR
+Rule 4     select_list -> IDENTIFIER
+Rule 5     select_list -> select_list COMMA IDENTIFIER
+Rule 6     table_list -> IDENTIFIER
+Rule 7     maybe_when -> WHEN condition
+Rule 8     maybe_when -> <empty>
+Rule 9     maybe_categorize_by -> CATEGORIZE BY column_list
+Rule 10    maybe_categorize_by -> <empty>
+Rule 11    maybe_like -> LIKE STRING
+Rule 12    maybe_like -> <empty>
+Rule 13    maybe_bound -> BOUND NUMBER
+Rule 14    maybe_bound -> <empty>
+Rule 15    maybe_average -> AVERAGE BY IDENTIFIER
+Rule 16    maybe_average -> <empty>
+Rule 17    maybe_project -> PROJECT project_list
+Rule 18    maybe_project -> <empty>
+Rule 19    project_list -> IDENTIFIER
+Rule 20    project_list -> project_list COMMA IDENTIFIER
+Rule 21    maybe_rank -> RANK BY IDENTIFIER maybe_order_direction
+Rule 22    maybe_rank -> <empty>
+Rule 23    maybe_order_direction -> ASC
+Rule 24    maybe_order_direction -> DESC
+Rule 25    maybe_order_direction -> <empty>
+Rule 26    column_list -> IDENTIFIER
+Rule 27    column_list -> column_list COMMA IDENTIFIER
+Rule 28    condition -> IDENTIFIER EQUALS IDENTIFIER
+Rule 29    condition -> IDENTIFIER EQUALS STRING
+Rule 30    condition -> IDENTIFIER LIKE STRING
+Rule 31    condition -> IDENTIFIER GT NUMBER
+Rule 32    condition -> IDENTIFIER LT NUMBER
+Rule 33    condition -> IDENTIFIER GE NUMBER
+Rule 34    condition -> IDENTIFIER LE NUMBER
+Rule 35    maybe_min -> MIN BY IDENTIFIER
+Rule 36    maybe_max -> MAX BY IDENTIFIER
+Rule 37    maybe_sum -> SUM BY IDENTIFIER
+Rule 38    maybe_sum -> <empty>
 
 Terminals, with rules where they appear
 
-ASCENDING            : 10
-BY                   : 7 20 21
-CATEGORIZE           : 20 21
-COMMA                : 15 17 21
-DESCENDING           : 11
-DOLLAR               : 14 15
-EQUALS               : 23 24
-EXTRACT              : 1 2 3 4 5 6
-IDENTIFIER           : 9 16 17 18 20 21 21 23 23 24 25
-LIKE                 : 22 25
-LIMIT                : 12
-NUMBER               : 12
-RANK                 : 7
-STRING               : 22 24 25
-USING                : 1 2 3 4 5 6
-WHEN                 : 19
+ASC                  : 23
+AVERAGE              : 15
+BOUND                : 13
+BY                   : 9 15 21 35 36 37
+CATEGORIZE           : 9
+COMMA                : 3 5 20 27
+DESC                 : 24
+DOLLAR               : 2 3
+EQUALS               : 28 29
+EXTRACT              : 1
+GE                   : 33
+GT                   : 31
+IDENTIFIER           : 4 5 6 15 19 20 21 26 27 28 28 29 30 31 32 33 34 35 36 37
+LE                   : 34
+LIKE                 : 11 30
+LT                   : 32
+MAX                  : 36
+MIN                  : 35
+NUMBER               : 13 31 32 33 34
+PROJECT              : 17
+RANK                 : 21
+STRING               : 11 29 30
+SUM                  : 37
+USING                : 1
+WHEN                 : 7
 error                : 
 
 Nonterminals, with rules where they appear
 
-categorize_by_clause : 1 2
-condition            : 19
-empty                : 8 13
-like_clause          : 1 3
-limit_clause         : 4 5
+column_list          : 9 27
+condition            : 7
+maybe_average        : 1
+maybe_bound          : 1
+maybe_categorize_by  : 1
+maybe_like           : 1
+maybe_max            : 1
+maybe_min            : 1
+maybe_order_direction : 21
+maybe_project        : 1
+maybe_rank           : 1
+maybe_sum            : 1
+maybe_when           : 1
+project_list         : 17 20
 query                : 0
-rank_by              : 7
-rank_clause          : 5
-rank_direction       : 7
-select_list          : 1 2 3 4 5 6 15 17
-table_list           : 1 2 3 4 5 6
-when_clause          : 1 2 3 4 5 6
+select_list          : 1 3 5
+table_list           : 1
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . query
+    (1) query -> . EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+
+    EXTRACT         shift and go to state 2
+
+    query                          shift and go to state 1
+
+state 1
+
+    (0) S' -> query .
+
+
+
+state 2
+
+    (1) query -> EXTRACT . select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (2) select_list -> . DOLLAR
+    (3) select_list -> . select_list COMMA DOLLAR
+    (4) select_list -> . IDENTIFIER
+    (5) select_list -> . select_list COMMA IDENTIFIER
+
+    DOLLAR          shift and go to state 4
+    IDENTIFIER      shift and go to state 5
+
+    select_list                    shift and go to state 3
+
+state 3
+
+    (1) query -> EXTRACT select_list . USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (3) select_list -> select_list . COMMA DOLLAR
+    (5) select_list -> select_list . COMMA IDENTIFIER
+
+    USING           shift and go to state 6
+    COMMA           shift and go to state 7
+
+
+state 4
+
+    (2) select_list -> DOLLAR .
+
+    USING           reduce using rule 2 (select_list -> DOLLAR .)
+    COMMA           reduce using rule 2 (select_list -> DOLLAR .)
+
+
+state 5
+
+    (4) select_list -> IDENTIFIER .
+
+    USING           reduce using rule 4 (select_list -> IDENTIFIER .)
+    COMMA           reduce using rule 4 (select_list -> IDENTIFIER .)
+
+
+state 6
+
+    (1) query -> EXTRACT select_list USING . table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (6) table_list -> . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 9
+
+    table_list                     shift and go to state 8
+
+state 7
+
+    (3) select_list -> select_list COMMA . DOLLAR
+    (5) select_list -> select_list COMMA . IDENTIFIER
+
+    DOLLAR          shift and go to state 10
+    IDENTIFIER      shift and go to state 11
+
+
+state 8
+
+    (1) query -> EXTRACT select_list USING table_list . maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (7) maybe_when -> . WHEN condition
+    (8) maybe_when -> .
+
+    WHEN            shift and go to state 13
+    CATEGORIZE      reduce using rule 8 (maybe_when -> .)
+    LIKE            reduce using rule 8 (maybe_when -> .)
+    BOUND           reduce using rule 8 (maybe_when -> .)
+    RANK            reduce using rule 8 (maybe_when -> .)
+    PROJECT         reduce using rule 8 (maybe_when -> .)
+    AVERAGE         reduce using rule 8 (maybe_when -> .)
+    MIN             reduce using rule 8 (maybe_when -> .)
+
+    maybe_when                     shift and go to state 12
+
+state 9
+
+    (6) table_list -> IDENTIFIER .
+
+    WHEN            reduce using rule 6 (table_list -> IDENTIFIER .)
+    CATEGORIZE      reduce using rule 6 (table_list -> IDENTIFIER .)
+    LIKE            reduce using rule 6 (table_list -> IDENTIFIER .)
+    BOUND           reduce using rule 6 (table_list -> IDENTIFIER .)
+    RANK            reduce using rule 6 (table_list -> IDENTIFIER .)
+    PROJECT         reduce using rule 6 (table_list -> IDENTIFIER .)
+    AVERAGE         reduce using rule 6 (table_list -> IDENTIFIER .)
+    MIN             reduce using rule 6 (table_list -> IDENTIFIER .)
+
+
+state 10
+
+    (3) select_list -> select_list COMMA DOLLAR .
+
+    USING           reduce using rule 3 (select_list -> select_list COMMA DOLLAR .)
+    COMMA           reduce using rule 3 (select_list -> select_list COMMA DOLLAR .)
+
+
+state 11
+
+    (5) select_list -> select_list COMMA IDENTIFIER .
+
+    USING           reduce using rule 5 (select_list -> select_list COMMA IDENTIFIER .)
+    COMMA           reduce using rule 5 (select_list -> select_list COMMA IDENTIFIER .)
+
+
+state 12
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when . maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (9) maybe_categorize_by -> . CATEGORIZE BY column_list
+    (10) maybe_categorize_by -> .
+
+    CATEGORIZE      shift and go to state 15
+    LIKE            reduce using rule 10 (maybe_categorize_by -> .)
+    BOUND           reduce using rule 10 (maybe_categorize_by -> .)
+    RANK            reduce using rule 10 (maybe_categorize_by -> .)
+    PROJECT         reduce using rule 10 (maybe_categorize_by -> .)
+    AVERAGE         reduce using rule 10 (maybe_categorize_by -> .)
+    MIN             reduce using rule 10 (maybe_categorize_by -> .)
+
+    maybe_categorize_by            shift and go to state 14
+
+state 13
+
+    (7) maybe_when -> WHEN . condition
+    (28) condition -> . IDENTIFIER EQUALS IDENTIFIER
+    (29) condition -> . IDENTIFIER EQUALS STRING
+    (30) condition -> . IDENTIFIER LIKE STRING
+    (31) condition -> . IDENTIFIER GT NUMBER
+    (32) condition -> . IDENTIFIER LT NUMBER
+    (33) condition -> . IDENTIFIER GE NUMBER
+    (34) condition -> . IDENTIFIER LE NUMBER
+
+    IDENTIFIER      shift and go to state 17
+
+    condition                      shift and go to state 16
+
+state 14
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by . maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (11) maybe_like -> . LIKE STRING
+    (12) maybe_like -> .
+
+    LIKE            shift and go to state 19
+    BOUND           reduce using rule 12 (maybe_like -> .)
+    RANK            reduce using rule 12 (maybe_like -> .)
+    PROJECT         reduce using rule 12 (maybe_like -> .)
+    AVERAGE         reduce using rule 12 (maybe_like -> .)
+    MIN             reduce using rule 12 (maybe_like -> .)
+
+    maybe_like                     shift and go to state 18
+
+state 15
+
+    (9) maybe_categorize_by -> CATEGORIZE . BY column_list
+
+    BY              shift and go to state 20
+
+
+state 16
+
+    (7) maybe_when -> WHEN condition .
+
+    CATEGORIZE      reduce using rule 7 (maybe_when -> WHEN condition .)
+    LIKE            reduce using rule 7 (maybe_when -> WHEN condition .)
+    BOUND           reduce using rule 7 (maybe_when -> WHEN condition .)
+    RANK            reduce using rule 7 (maybe_when -> WHEN condition .)
+    PROJECT         reduce using rule 7 (maybe_when -> WHEN condition .)
+    AVERAGE         reduce using rule 7 (maybe_when -> WHEN condition .)
+    MIN             reduce using rule 7 (maybe_when -> WHEN condition .)
+
+
+state 17
+
+    (28) condition -> IDENTIFIER . EQUALS IDENTIFIER
+    (29) condition -> IDENTIFIER . EQUALS STRING
+    (30) condition -> IDENTIFIER . LIKE STRING
+    (31) condition -> IDENTIFIER . GT NUMBER
+    (32) condition -> IDENTIFIER . LT NUMBER
+    (33) condition -> IDENTIFIER . GE NUMBER
+    (34) condition -> IDENTIFIER . LE NUMBER
+
+    EQUALS          shift and go to state 21
+    LIKE            shift and go to state 22
+    GT              shift and go to state 23
+    LT              shift and go to state 24
+    GE              shift and go to state 25
+    LE              shift and go to state 26
+
+
+state 18
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like . maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (13) maybe_bound -> . BOUND NUMBER
+    (14) maybe_bound -> .
+
+    BOUND           shift and go to state 28
+    RANK            reduce using rule 14 (maybe_bound -> .)
+    PROJECT         reduce using rule 14 (maybe_bound -> .)
+    AVERAGE         reduce using rule 14 (maybe_bound -> .)
+    MIN             reduce using rule 14 (maybe_bound -> .)
+
+    maybe_bound                    shift and go to state 27
+
+state 19
+
+    (11) maybe_like -> LIKE . STRING
+
+    STRING          shift and go to state 29
+
+
+state 20
+
+    (9) maybe_categorize_by -> CATEGORIZE BY . column_list
+    (26) column_list -> . IDENTIFIER
+    (27) column_list -> . column_list COMMA IDENTIFIER
+
+    IDENTIFIER      shift and go to state 31
+
+    column_list                    shift and go to state 30
+
+state 21
+
+    (28) condition -> IDENTIFIER EQUALS . IDENTIFIER
+    (29) condition -> IDENTIFIER EQUALS . STRING
+
+    IDENTIFIER      shift and go to state 32
+    STRING          shift and go to state 33
+
+
+state 22
+
+    (30) condition -> IDENTIFIER LIKE . STRING
+
+    STRING          shift and go to state 34
+
+
+state 23
+
+    (31) condition -> IDENTIFIER GT . NUMBER
+
+    NUMBER          shift and go to state 35
+
+
+state 24
+
+    (32) condition -> IDENTIFIER LT . NUMBER
+
+    NUMBER          shift and go to state 36
+
+
+state 25
+
+    (33) condition -> IDENTIFIER GE . NUMBER
+
+    NUMBER          shift and go to state 37
+
+
+state 26
+
+    (34) condition -> IDENTIFIER LE . NUMBER
+
+    NUMBER          shift and go to state 38
+
+
+state 27
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound . maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (21) maybe_rank -> . RANK BY IDENTIFIER maybe_order_direction
+    (22) maybe_rank -> .
+
+    RANK            shift and go to state 40
+    PROJECT         reduce using rule 22 (maybe_rank -> .)
+    AVERAGE         reduce using rule 22 (maybe_rank -> .)
+    MIN             reduce using rule 22 (maybe_rank -> .)
+
+    maybe_rank                     shift and go to state 39
+
+state 28
+
+    (13) maybe_bound -> BOUND . NUMBER
+
+    NUMBER          shift and go to state 41
+
+
+state 29
+
+    (11) maybe_like -> LIKE STRING .
+
+    BOUND           reduce using rule 11 (maybe_like -> LIKE STRING .)
+    RANK            reduce using rule 11 (maybe_like -> LIKE STRING .)
+    PROJECT         reduce using rule 11 (maybe_like -> LIKE STRING .)
+    AVERAGE         reduce using rule 11 (maybe_like -> LIKE STRING .)
+    MIN             reduce using rule 11 (maybe_like -> LIKE STRING .)
+
+
+state 30
+
+    (9) maybe_categorize_by -> CATEGORIZE BY column_list .
+    (27) column_list -> column_list . COMMA IDENTIFIER
+
+    LIKE            reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    BOUND           reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    RANK            reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    PROJECT         reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    AVERAGE         reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    MIN             reduce using rule 9 (maybe_categorize_by -> CATEGORIZE BY column_list .)
+    COMMA           shift and go to state 42
+
+
+state 31
+
+    (26) column_list -> IDENTIFIER .
+
+    COMMA           reduce using rule 26 (column_list -> IDENTIFIER .)
+    LIKE            reduce using rule 26 (column_list -> IDENTIFIER .)
+    BOUND           reduce using rule 26 (column_list -> IDENTIFIER .)
+    RANK            reduce using rule 26 (column_list -> IDENTIFIER .)
+    PROJECT         reduce using rule 26 (column_list -> IDENTIFIER .)
+    AVERAGE         reduce using rule 26 (column_list -> IDENTIFIER .)
+    MIN             reduce using rule 26 (column_list -> IDENTIFIER .)
+
+
+state 32
+
+    (28) condition -> IDENTIFIER EQUALS IDENTIFIER .
+
+    CATEGORIZE      reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    LIKE            reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    BOUND           reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    RANK            reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    PROJECT         reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    AVERAGE         reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+    MIN             reduce using rule 28 (condition -> IDENTIFIER EQUALS IDENTIFIER .)
+
+
+state 33
+
+    (29) condition -> IDENTIFIER EQUALS STRING .
+
+    CATEGORIZE      reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    LIKE            reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    BOUND           reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    RANK            reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    PROJECT         reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    AVERAGE         reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+    MIN             reduce using rule 29 (condition -> IDENTIFIER EQUALS STRING .)
+
+
+state 34
+
+    (30) condition -> IDENTIFIER LIKE STRING .
+
+    CATEGORIZE      reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    LIKE            reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    BOUND           reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    RANK            reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    PROJECT         reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    AVERAGE         reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+    MIN             reduce using rule 30 (condition -> IDENTIFIER LIKE STRING .)
+
+
+state 35
+
+    (31) condition -> IDENTIFIER GT NUMBER .
+
+    CATEGORIZE      reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    LIKE            reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    BOUND           reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    RANK            reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    PROJECT         reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    AVERAGE         reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+    MIN             reduce using rule 31 (condition -> IDENTIFIER GT NUMBER .)
+
+
+state 36
+
+    (32) condition -> IDENTIFIER LT NUMBER .
+
+    CATEGORIZE      reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    LIKE            reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    BOUND           reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    RANK            reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    PROJECT         reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    AVERAGE         reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+    MIN             reduce using rule 32 (condition -> IDENTIFIER LT NUMBER .)
+
+
+state 37
+
+    (33) condition -> IDENTIFIER GE NUMBER .
+
+    CATEGORIZE      reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    LIKE            reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    BOUND           reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    RANK            reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    PROJECT         reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    AVERAGE         reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+    MIN             reduce using rule 33 (condition -> IDENTIFIER GE NUMBER .)
+
+
+state 38
+
+    (34) condition -> IDENTIFIER LE NUMBER .
+
+    CATEGORIZE      reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    LIKE            reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    BOUND           reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    RANK            reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    PROJECT         reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    AVERAGE         reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+    MIN             reduce using rule 34 (condition -> IDENTIFIER LE NUMBER .)
+
+
+state 39
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank . maybe_project maybe_average maybe_min maybe_max maybe_sum
+    (17) maybe_project -> . PROJECT project_list
+    (18) maybe_project -> .
+
+    PROJECT         shift and go to state 44
+    AVERAGE         reduce using rule 18 (maybe_project -> .)
+    MIN             reduce using rule 18 (maybe_project -> .)
+
+    maybe_project                  shift and go to state 43
+
+state 40
+
+    (21) maybe_rank -> RANK . BY IDENTIFIER maybe_order_direction
+
+    BY              shift and go to state 45
+
+
+state 41
+
+    (13) maybe_bound -> BOUND NUMBER .
+
+    RANK            reduce using rule 13 (maybe_bound -> BOUND NUMBER .)
+    PROJECT         reduce using rule 13 (maybe_bound -> BOUND NUMBER .)
+    AVERAGE         reduce using rule 13 (maybe_bound -> BOUND NUMBER .)
+    MIN             reduce using rule 13 (maybe_bound -> BOUND NUMBER .)
+
+
+state 42
+
+    (27) column_list -> column_list COMMA . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 46
+
+
+state 43
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project . maybe_average maybe_min maybe_max maybe_sum
+    (15) maybe_average -> . AVERAGE BY IDENTIFIER
+    (16) maybe_average -> .
+
+    AVERAGE         shift and go to state 48
+    MIN             reduce using rule 16 (maybe_average -> .)
+
+    maybe_average                  shift and go to state 47
+
+state 44
+
+    (17) maybe_project -> PROJECT . project_list
+    (19) project_list -> . IDENTIFIER
+    (20) project_list -> . project_list COMMA IDENTIFIER
+
+    IDENTIFIER      shift and go to state 50
+
+    project_list                   shift and go to state 49
+
+state 45
+
+    (21) maybe_rank -> RANK BY . IDENTIFIER maybe_order_direction
+
+    IDENTIFIER      shift and go to state 51
+
+
+state 46
+
+    (27) column_list -> column_list COMMA IDENTIFIER .
+
+    COMMA           reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    LIKE            reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    BOUND           reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    RANK            reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    PROJECT         reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    AVERAGE         reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+    MIN             reduce using rule 27 (column_list -> column_list COMMA IDENTIFIER .)
+
+
+state 47
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average . maybe_min maybe_max maybe_sum
+    (35) maybe_min -> . MIN BY IDENTIFIER
+
+    MIN             shift and go to state 53
+
+    maybe_min                      shift and go to state 52
+
+state 48
+
+    (15) maybe_average -> AVERAGE . BY IDENTIFIER
+
+    BY              shift and go to state 54
+
+
+state 49
+
+    (17) maybe_project -> PROJECT project_list .
+    (20) project_list -> project_list . COMMA IDENTIFIER
+
+    AVERAGE         reduce using rule 17 (maybe_project -> PROJECT project_list .)
+    MIN             reduce using rule 17 (maybe_project -> PROJECT project_list .)
+    COMMA           shift and go to state 55
+
+
+state 50
+
+    (19) project_list -> IDENTIFIER .
+
+    COMMA           reduce using rule 19 (project_list -> IDENTIFIER .)
+    AVERAGE         reduce using rule 19 (project_list -> IDENTIFIER .)
+    MIN             reduce using rule 19 (project_list -> IDENTIFIER .)
+
+
+state 51
+
+    (21) maybe_rank -> RANK BY IDENTIFIER . maybe_order_direction
+    (23) maybe_order_direction -> . ASC
+    (24) maybe_order_direction -> . DESC
+    (25) maybe_order_direction -> .
+
+    ASC             shift and go to state 57
+    DESC            shift and go to state 58
+    PROJECT         reduce using rule 25 (maybe_order_direction -> .)
+    AVERAGE         reduce using rule 25 (maybe_order_direction -> .)
+    MIN             reduce using rule 25 (maybe_order_direction -> .)
+
+    maybe_order_direction          shift and go to state 56
+
+state 52
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min . maybe_max maybe_sum
+    (36) maybe_max -> . MAX BY IDENTIFIER
+
+    MAX             shift and go to state 60
+
+    maybe_max                      shift and go to state 59
+
+state 53
+
+    (35) maybe_min -> MIN . BY IDENTIFIER
+
+    BY              shift and go to state 61
+
+
+state 54
+
+    (15) maybe_average -> AVERAGE BY . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 62
+
+
+state 55
+
+    (20) project_list -> project_list COMMA . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 63
+
+
+state 56
+
+    (21) maybe_rank -> RANK BY IDENTIFIER maybe_order_direction .
+
+    PROJECT         reduce using rule 21 (maybe_rank -> RANK BY IDENTIFIER maybe_order_direction .)
+    AVERAGE         reduce using rule 21 (maybe_rank -> RANK BY IDENTIFIER maybe_order_direction .)
+    MIN             reduce using rule 21 (maybe_rank -> RANK BY IDENTIFIER maybe_order_direction .)
+
+
+state 57
+
+    (23) maybe_order_direction -> ASC .
+
+    PROJECT         reduce using rule 23 (maybe_order_direction -> ASC .)
+    AVERAGE         reduce using rule 23 (maybe_order_direction -> ASC .)
+    MIN             reduce using rule 23 (maybe_order_direction -> ASC .)
+
+
+state 58
+
+    (24) maybe_order_direction -> DESC .
+
+    PROJECT         reduce using rule 24 (maybe_order_direction -> DESC .)
+    AVERAGE         reduce using rule 24 (maybe_order_direction -> DESC .)
+    MIN             reduce using rule 24 (maybe_order_direction -> DESC .)
+
+
+state 59
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max . maybe_sum
+    (37) maybe_sum -> . SUM BY IDENTIFIER
+    (38) maybe_sum -> .
+
+    SUM             shift and go to state 65
+    $end            reduce using rule 38 (maybe_sum -> .)
+
+    maybe_sum                      shift and go to state 64
+
+state 60
+
+    (36) maybe_max -> MAX . BY IDENTIFIER
+
+    BY              shift and go to state 66
+
+
+state 61
+
+    (35) maybe_min -> MIN BY . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 67
+
+
+state 62
+
+    (15) maybe_average -> AVERAGE BY IDENTIFIER .
+
+    MIN             reduce using rule 15 (maybe_average -> AVERAGE BY IDENTIFIER .)
+
+
+state 63
+
+    (20) project_list -> project_list COMMA IDENTIFIER .
+
+    COMMA           reduce using rule 20 (project_list -> project_list COMMA IDENTIFIER .)
+    AVERAGE         reduce using rule 20 (project_list -> project_list COMMA IDENTIFIER .)
+    MIN             reduce using rule 20 (project_list -> project_list COMMA IDENTIFIER .)
+
+
+state 64
+
+    (1) query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum .
+
+    $end            reduce using rule 1 (query -> EXTRACT select_list USING table_list maybe_when maybe_categorize_by maybe_like maybe_bound maybe_rank maybe_project maybe_average maybe_min maybe_max maybe_sum .)
+
+
+state 65
+
+    (37) maybe_sum -> SUM . BY IDENTIFIER
+
+    BY              shift and go to state 68
+
+
+state 66
+
+    (36) maybe_max -> MAX BY . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 69
+
+
+state 67
+
+    (35) maybe_min -> MIN BY IDENTIFIER .
+
+    MAX             reduce using rule 35 (maybe_min -> MIN BY IDENTIFIER .)
+
+
+state 68
+
+    (37) maybe_sum -> SUM BY . IDENTIFIER
+
+    IDENTIFIER      shift and go to state 70
+
+
+state 69
+
+    (36) maybe_max -> MAX BY IDENTIFIER .
+
+    SUM             reduce using rule 36 (maybe_max -> MAX BY IDENTIFIER .)
+    $end            reduce using rule 36 (maybe_max -> MAX BY IDENTIFIER .)
+
+
+state 70
+
+    (37) maybe_sum -> SUM BY IDENTIFIER .
+
+    $end            reduce using rule 37 (maybe_sum -> SUM BY IDENTIFIER .)
 
