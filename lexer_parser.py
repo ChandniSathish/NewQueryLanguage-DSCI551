@@ -628,6 +628,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
     return result
     # return []
 
+
 # Main program
 if __name__ == "__main__":
     # Load data into dataframe
@@ -664,6 +665,7 @@ if __name__ == "__main__":
             min_field = None
             max_field = None
             sum_by = None
+            join_condition = None
 
             # Process the query parts
             while query_parts:
