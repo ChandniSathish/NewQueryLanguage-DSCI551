@@ -25,6 +25,7 @@ tokens = (
     'LT',
     'GE',
     'LE',
+    'EQ',
     'PROJECT',
     'AVERAGE',
     'MIN',
@@ -56,6 +57,7 @@ t_GT = r'>'
 t_LT = r'<'
 t_GE = r'>='
 t_LE = r'<='
+t_EQ = r'=='
 
 t_ignore = ' \t'
 
@@ -85,6 +87,8 @@ reserved = {
     'ASC': 'ASC',
     'DESC': 'DESC',
     'PROJECT': 'PROJECT',
+    'AND': 'AND',
+    'OR': 'OR',
     'AVERAGE': 'AVERAGE',
     'MIN': 'MIN',
     'MAX': 'MAX',
@@ -296,23 +300,12 @@ def load_data_from_json(file_path):
         data = json.load(json_file)
     return data
 
-def sort_data_by_field(data, field, reverse=False):
-    if isinstance(data, list):
-        return sorted(data, key=lambda x: x.get(field, 0), reverse=reverse)
-    elif isinstance(data, dict):
-        sorted_data = {}
-        for category, rows in data.items():
-            sorted_data[category] = sorted(rows, key=lambda x: x.get(field, 0), reverse=reverse)
-        return sorted_data
-    else:
-        raise ValueError("Unsupported data type for sorting")
-
 # Function to execute an "EXTRACT" query on the data
 def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None):
     result = data
 
     if conditions:
-        conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=')
+        conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '==').replace('AND', 'and').replace('OR', 'or')
         result = [row for row in result if eval(conditions, {}, row)]
 
     if categorize_by:
@@ -416,7 +409,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
 # Main program
 if __name__ == "__main__":
     # Load data from the JSON file
-    data = load_data_from_json('sample2.json')
+    data = load_data_from_json('iris.json')
 
     while True:
         try:
