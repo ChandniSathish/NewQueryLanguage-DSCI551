@@ -314,6 +314,7 @@ def sort_data_by_field(data, field, reverse=False):
 # Function to execute an "EXTRACT" query on the data
 def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None):
     result = data
+    
 
     if conditions:
         conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=')
@@ -351,30 +352,86 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         right_column = join['right_column']
 
         # Sort the dataframes
-        result_sorted = result.sort_values(by=left_column)
-        other_df_sorted = result.sort_values(by=right_column)
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        csv_file_path = os.path.join(script_directory, 'iris2.csv')
+        result = pd.read_csv(csv_file_path, sep=',')
 
-        # Manual Inner Join
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        csv_file_path = os.path.join(script_directory, 'iris1.csv')
+        result1 = pd.read_csv(csv_file_path, sep=',')
+
+        result_sorted = result.sort_values(by=left_column)
+        other_df_sorted = result1.sort_values(by=right_column)
+        
         merged_data = []
         i, j = 0, 0
+        if join_type == "INNER":
+            # Manual Inner Join
+            while i < len(result_sorted) and j < len(other_df_sorted):
+                row_left = result_sorted.iloc[i]
+                row_right = other_df_sorted.iloc[j]
 
-        while i < len(result_sorted) and j < len(other_df_sorted):
-            row_left = result_sorted.iloc[i]
-            row_right = other_df_sorted.iloc[j]
+                if row_left[left_column] == row_right[right_column]:
+                    print(row_left,row_right)
+                    merged_row = pd.concat([row_left, row_right]).to_dict()
+                    print("merged_row",merged_row)
+                    merged_data.append(merged_row)
+                    i += 1
+                    j += 1
+                elif row_left[left_column] < row_right[right_column]:
+                    i += 1
+                else:
+                    j += 1
 
-            if row_left[left_column] == row_right[right_column]:
-                print(row_left,row_right)
-                merged_row = pd.concat([row_left, row_right]).to_array()
-                print("merged_row",merged_row)
-                merged_data.append(merged_row)
+        if join_type == "LEFT":
+            while i < len(result_sorted):
+                row_left = result_sorted.iloc[i]
+                match_found = False
+
+                while j < len(other_df_sorted) and row_left[left_column] >= other_df_sorted.iloc[j][right_column]:
+                    row_right = other_df_sorted.iloc[j]
+                    if row_left[left_column] == row_right[right_column]:
+                        merged_row = pd.concat([row_left, row_right]).to_dict()
+                        merged_data.append(merged_row)
+                        match_found = True
+                        j += 1
+                        break  # Break the inner loop after finding the first match
+                    j += 1
+
+                if not match_found:
+                    # For no match, include left row with NaNs for right columns
+                    merged_row = pd.concat([row_left, pd.Series([pd.NA] * len(other_df_sorted.columns), index=other_df_sorted.columns)]).to_dict()
+                    merged_data.append(merged_row)
+
                 i += 1
-                j += 1
-            elif row_left[left_column] < row_right[right_column]:
-                i += 1
-            else:
+
+        if join_type == "RIGHT":
+            # Manual Right Outer Join
+            merged_data = []
+            i, j = 0, 0
+
+            while j < len(other_df_sorted):
+                row_right = other_df_sorted.iloc[j]
+                match_found = False
+
+                while i < len(result_sorted) and result_sorted.iloc[i][left_column] <= row_right[right_column]:
+                    row_left = result_sorted.iloc[i]
+                    if row_left[left_column] == row_right[right_column]:
+                        merged_row = pd.concat([row_left, row_right]).to_dict()
+                        merged_data.append(merged_row)
+                        match_found = True
+                        i += 1
+                        break  # Break the inner loop after finding the first match
+                    i += 1
+
+                if not match_found:
+                    # For no match, include right row with NaNs for left columns
+                    merged_row = pd.concat([pd.Series([pd.NA] * len(result_sorted.columns), index=result_sorted.columns), row_right]).to_dict()
+                    merged_data.append(merged_row)
+
                 j += 1
 
-        # Convert merged data to DataFrame
+         # Convert merged data to DataFrame
         result = pd.DataFrame(merged_data)
 
     if categorize_by:
@@ -408,13 +465,10 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         # Handle other aggregate functions
         for agg_func in ['MAX', 'MIN', 'AVERAGE', 'SUM']:
             if agg_func in categorize_by['aggregate_function']:
-                print("*****************aggregation1",aggregation)
                 func_index = categorize_by['aggregate_function'].index(agg_func)
                 if len(categorize_by['aggregate_function']) > func_index + 1:
                     func_column = categorize_by['aggregate_function'][func_index + 1]
-                    print("****************func_column",func_column)
                     if func_column not in categorize_by['columns']:
-                        print("*****************aggregation2",aggregation)
                         if agg_func == 'AVERAGE':
                             aggregation[func_column] = 'mean'
                         else:
@@ -422,7 +476,6 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
 
         # Apply the aggregation
         if aggregation:
-            print("*****************aggregation",aggregation)
             result = grouped_data.agg(aggregation).reset_index()
 
         # if 'COUNT' in categorize_by['aggregate_function']:
