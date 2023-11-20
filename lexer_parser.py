@@ -312,10 +312,8 @@ def sort_data_by_field(data, field, reverse=False):
         raise ValueError("Unsupported data type for sorting")
 
 # Function to execute an "EXTRACT" query on the data
-def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None):
+def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None,project_fields=None,average_field=None,min_field=None,max_field=None,sum_by=None):
     result = data
-    
-
     if conditions:
         conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=')
         operators = {
@@ -395,7 +393,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                         merged_data.append(merged_row)
                         match_found = True
                         j += 1
-                        break  # Break the inner loop after finding the first match
+                        sys.exit(1)  # sys.exit(1) the inner loop after finding the first match
                     j += 1
 
                 if not match_found:
@@ -421,7 +419,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                         merged_data.append(merged_row)
                         match_found = True
                         i += 1
-                        break  # Break the inner loop after finding the first match
+                        sys.exit(1)  # sys.exit(1) the inner loop after finding the first match
                     i += 1
 
                 if not match_found:
@@ -477,71 +475,6 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         # Apply the aggregation
         if aggregation:
             result = grouped_data.agg(aggregation).reset_index()
-
-        # if 'COUNT' in categorize_by['aggregate_function']:
-        #     # Get the index of 'COUNT' and the subsequent column name, if exists
-        #     count_index = categorize_by['aggregate_function'].index('COUNT')
-        #     count_column = categorize_by['aggregate_function'][count_index + 1] if len(categorize_by['aggregate_function']) > count_index + 1 else None
-
-        #     if count_column:
-        #         # Count non-null entries for the specified column
-        #         result = grouped_data[count_column].count().reset_index(name='count')
-
-        # # If no specific aggregate function, process groups as needed
-        # if not aggregation and not count_column:
-        #     categorized_data = {group: dataframe.to_dict('records') for group, dataframe in grouped_data}
-        #     result = categorized_data
-
-
-        # if categorize_by:
-        #     grouped_data = data.groupby(categorize_by['columns'])
-
-        #     # Initialize an empty dictionary for aggregation
-        #     aggregation = {}
-
-        #     # Check if 'COUNT' is specified in the aggregate function
-        #     if 'COUNT' in categorize_by['aggregate_function']:
-        #         # Get the index of 'COUNT' and the subsequent column name, if exists
-        #         count_index = categorize_by['aggregate_function'].index('COUNT')
-        #         count_column = categorize_by['aggregate_function'][count_index + 1] if len(categorize_by['aggregate_function']) > count_index + 1 else None
-
-        #         if count_column:
-        #             # Count non-null entries for the specified column
-        #             result = grouped_data[count_column].count().reset_index(name='count')
-
-        #     # Check if 'MAX' is specified in the aggregate function
-        #     if 'MAX' in categorize_by['aggregate_function']:
-        #         # Get the index of 'MAX' and the subsequent column name, if exists
-        #         max_index = categorize_by['aggregate_function'].index('MAX')
-        #         max_column = categorize_by['aggregate_function'][max_index + 1] if len(categorize_by['aggregate_function']) > max_index + 1 else None
-
-        #         if max_column:
-        #             # Find the maximum value for the specified column
-        #             aggregation[max_column] = 'max'
-
-        #     # Apply the aggregation
-        #     if aggregation:
-        #         result = grouped_data.agg(aggregation).reset_index()
-        #     else:
-        #         # If no specific aggregate function, process groups as needed
-        #         categorized_data = {group: dataframe.to_dict('records') for group, dataframe in grouped_data}
-        #         result = categorized_data
-
-    # if categorize_by:
-
-    #     grouped_data = data.groupby(categorize_by['columns'])
-    #     # Process the groups as needed, for example, converting them to a dictionary
-    #     categorized_data = {group: result.to_dict('records') for group, dataframe in grouped_data}
-    #     result = categorized_data
-
-    #     if 'aggregate_function' in categorize_by and 'COUNT' in categorize_by['aggregate_function']:
-    #         # Get the column name for COUNT, if specified
-    #         count_column = categorize_by['aggregate_function'][1] if len(categorize_by['aggregate_function']) > 1 else None
-
-    #     if count_column:
-    #         # Count non-null entries for the specified column
-    #         result = grouped_data[count_column].count().reset_index(name='count')
-
 
     if bound:
         result = result[:bound['value']]
@@ -630,172 +563,151 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
 
 
 # Main program
-if __name__ == "__main__":
-    # Load data into dataframe
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    csv_file_path = os.path.join(script_directory, 'iris.csv')
-    data= pd.read_csv(csv_file_path, sep=',')
+def parse_and_evaluate_query(data,query,components):
+    print("hi???")
+    try:
 
-    while True:
-        try:
-            # Get user input
-            query = input("Enter a basic SQL query (or 'exit' to quit): ")
+        if len(components) < 4:
+            print("Invalid query. Please provide a valid query.")
+            sys.exit(1)
+        # Parse the query components
+        extract, dollar, using, field_name, *query_parts = components
 
-            if query.lower() == 'exit':
-                break
+        # Initialize variables
+        conditions = None
+        categorize_by = None
+        bound = None
+        rank_by = None
+        project_fields = None
+        average_field = None
+        min_field = None
+        max_field = None
+        sum_by = None
+        join_condition = None
 
-            # Split the query into components
-            components = query.split()
-            print("********components",components)
-            # sys.exit(1)
-            if len(components) < 4:
-                print("Invalid query. Please provide a valid query.")
-                continue
+        # Process the query parts
+        while query_parts:
+            keyword = query_parts.pop(0)
 
-            # Parse the query components
-            extract, dollar, using, field_name, *query_parts = components
+            if keyword == 'INNER' or keyword == "LEFT" or keyword == "RIGHT":
+                type = keyword
+                join_condition = {}
+                if not query_parts or query_parts.pop(0) != 'JOIN':
+                    print("Invalid query. 'INNER OR LEFT OR RIGHT' should be followed by 'JOIN'.")
+                    sys.exit(1)
 
-            # Initialize variables
-            conditions = None
-            categorize_by = None
-            bound = None
-            rank_by = None
-            project_fields = None
-            average_field = None
-            min_field = None
-            max_field = None
-            sum_by = None
-            join_condition = None
+                # Assuming the JOIN condition is in the format 'columnA = columnB'
+                if len(query_parts) >= 3 and query_parts[1] == '=':
+                    left_column = query_parts.pop(0)  # Pops 'columnA'
+                    query_parts.pop(0)  # Pops '='
+                    right_column = query_parts.pop(0)  # Pops 'columnB'
+                    join_condition = {'join_type': type,'left_column': left_column, 'right_column': right_column}
+                else:
+                    print("Invalid INNER JOIN syntax.")
+                    sys.exit(1)
 
-            # Process the query parts
-            while query_parts:
-                keyword = query_parts.pop(0)
+            if keyword == 'CATEGORIZE':
+                if not query_parts or query_parts.pop(0) != 'BY':
+                    print("Invalid query. 'CATEGORIZE BY' should be followed by column names.")
+                    sys.exit(1)
 
-                if keyword == 'INNER' or keyword == "LEFT" or keyword == "RIGHT":
-                    type = keyword
-                    join_condition = {}
-                    if not query_parts or query_parts.pop(0) != 'JOIN':
-                        print("Invalid query. 'INNER OR LEFT OR RIGHT' should be followed by 'JOIN'.")
-                        break
+                # Extract grouping columns
+                group_columns = []
+                while query_parts and query_parts[0] not in ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE']:
+                    group_columns.append(query_parts.pop(0))
 
-                    # Assuming the JOIN condition is in the format 'columnA = columnB'
-                    if len(query_parts) >= 3 and query_parts[1] == '=':
-                        left_column = query_parts.pop(0)  # Pops 'columnA'
-                        query_parts.pop(0)  # Pops '='
-                        right_column = query_parts.pop(0)  # Pops 'columnB'
-                        join_condition = {'join_type': type,'left_column': left_column, 'right_column': right_column}
-                    else:
-                        print("Invalid INNER JOIN syntax.")
-                        break
-
-                if keyword == 'CATEGORIZE':
+                # Check if AGGREGATE is specified
+                aggregate_function = []
+                if query_parts and query_parts[0] == 'AGGREGATE':
+                    query_parts.pop(0)  # Remove AGGREGATE keyword
                     if not query_parts or query_parts.pop(0) != 'BY':
-                        print("Invalid query. 'CATEGORIZE BY' should be followed by column names.")
-                        break
+                        print("Invalid query. 'AGGREGATE BY' should be followed by an aggregate function.")
+                        sys.exit(1)
+                    if query_parts:
+                        while query_parts and query_parts[0] not in ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE']:
+                            aggregate_function.append(query_parts.pop(0))
+                        # aggregate_function = query_parts.pop(0)
 
-                    # Extract grouping columns
-                    group_columns = []
-                    while query_parts and query_parts[0] not in ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE']:
-                        group_columns.append(query_parts.pop(0))
+                categorize_by = {'columns': group_columns, 'aggregate_function':aggregate_function}
 
-                    # Check if AGGREGATE is specified
-                    aggregate_function = []
-                    if query_parts and query_parts[0] == 'AGGREGATE':
-                        query_parts.pop(0)  # Remove AGGREGATE keyword
-                        if not query_parts or query_parts.pop(0) != 'BY':
-                            print("Invalid query. 'AGGREGATE BY' should be followed by an aggregate function.")
-                            break
-                        if query_parts:
-                            while query_parts and query_parts[0] not in ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE']:
-                                aggregate_function.append(query_parts.pop(0))
-                            # aggregate_function = query_parts.pop(0)
+            if keyword == 'WHEN':
+                print("hi???")
+                if not query_parts:
+                    print("Invalid query. Missing condition.")
+                    sys.exit(1)
+                conditions = ' '.join(query_parts)
+                
 
-                    categorize_by = {'columns': group_columns, 'aggregate_function':aggregate_function}
+            if keyword == 'LIKE':
+                if not query_parts:
+                    print("Invalid query. Missing pattern for 'LIKE'.")
+                    sys.exit(1)
+                if conditions:
+                    conditions += f" and {categorize_by} like '{query_parts.pop(0)}'"
+                else:
+                    conditions = f"{categorize_by} like '{query_parts.pop(0)}'"
 
-                if keyword == 'WHEN':
-                    if not query_parts:
-                        print("Invalid query. Missing condition.")
-                        break
-                    conditions = ' '.join(query_parts)
-                    break
+            if keyword == 'BOUND':
+                if not query_parts:
+                    print("Invalid query. Missing value for 'BOUND'.")
+                    sys.exit(1)
+                bound_value = query_parts.pop(0)
+                try:
+                    bound_value = int(bound_value)
+                except ValueError:
+                    print("Invalid query. 'BOUND' value must be an integer.")
+                    sys.exit(1)
+                bound = {'column': 'BOUND', 'value': bound_value}
+        
+            if keyword == 'PROJECT':
+                if not query_parts:
+                    print("Invalid query. Missing fields for 'PROJECT'.")
+                    sys.exit(1)
+                project_fields = query_parts.pop(0).split(',')
 
-                # if categorize_by:
-                #     categorized_data = {}
-                #     for category, rows in result.items():
-                #         category_key = row.get(categorize_by, 'Uncategorized') if isinstance(category, dict) else category
-                #         categorized_data.setdefault(category_key, []).extend(rows)
-                #     result = categorized_data
+            if keyword == 'RANK':
+                if not query_parts:
+                    print("Invalid query. Missing column for ranking.")
+                    sys.exit(1)
+                rank_column = query_parts.pop(0)
+                order_direction = 'ASC'
+                while query_parts and query_parts[0] in ['ASC', 'DESC']:
+                    if query_parts.pop(0) == 'DESC':
+                        order_direction = 'DESC'
+                rank_by = {'column': rank_column, 'order_direction': order_direction}
 
-                if keyword == 'LIKE':
-                    if not query_parts:
-                        print("Invalid query. Missing pattern for 'LIKE'.")
-                        break
-                    if conditions:
-                        conditions += f" and {categorize_by} like '{query_parts.pop(0)}'"
-                    else:
-                        conditions = f"{categorize_by} like '{query_parts.pop(0)}'"
+            if keyword == 'AVERAGE':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'AVERAGE'.")
+                    sys.exit(1)
+                average_field = query_parts.pop(0)
 
-                if keyword == 'BOUND':
-                    if not query_parts:
-                        print("Invalid query. Missing value for 'BOUND'.")
-                        break
-                    bound_value = query_parts.pop(0)
-                    try:
-                        bound_value = int(bound_value)
-                    except ValueError:
-                        print("Invalid query. 'BOUND' value must be an integer.")
-                        break
-                    bound = {'column': 'BOUND', 'value': bound_value}
-            
-                if keyword == 'PROJECT':
-                    if not query_parts:
-                        print("Invalid query. Missing fields for 'PROJECT'.")
-                        break
-                    project_fields = query_parts.pop(0).split(',')
+            if keyword == 'MIN':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'MIN'.")
+                    sys.exit(1)
+                min_field = query_parts.pop(0)
 
-                if keyword == 'RANK':
-                    if not query_parts:
-                        print("Invalid query. Missing column for ranking.")
-                        break
-                    rank_column = query_parts.pop(0)
-                    order_direction = 'ASC'
-                    while query_parts and query_parts[0] in ['ASC', 'DESC']:
-                        if query_parts.pop(0) == 'DESC':
-                            order_direction = 'DESC'
-                    rank_by = {'column': rank_column, 'order_direction': order_direction}
+            if keyword == 'MAX':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'MAX'.")
+                    sys.exit(1)
+                max_field = query_parts.pop(0)
 
-                if keyword == 'AVERAGE':
-                    if not query_parts:
-                        print("Invalid query. Missing field for 'AVERAGE'.")
-                        break
-                    average_field = query_parts.pop(0)
+            if keyword == 'SUM':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'SUM'.")
+                    sys.exit(1)
+                sum_by = query_parts.pop(0)
 
-                if keyword == 'MIN':
-                    if not query_parts:
-                        print("Invalid query. Missing field for 'MIN'.")
-                        break
-                    min_field = query_parts.pop(0)
-
-                if keyword == 'MAX':
-                    if not query_parts:
-                        print("Invalid query. Missing field for 'MAX'.")
-                        break
-                    max_field = query_parts.pop(0)
-
-                if keyword == 'SUM':
-                    if not query_parts:
-                        print("Invalid query. Missing field for 'SUM'.")
-                        break
-                    sum_by = query_parts.pop(0)
-
-            # Execute the query on the loaded data
-            print("***************conditions", conditions)
-            print("***************categorize_by", categorize_by)
-            print("***************bound", bound)
-            print("***************rank_by", rank_by)
-            print("***************join", join_condition)
-            result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition)
-            print("Query Result:")
-            print(result)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # Execute the query on the loaded data
+        print("***************conditions", conditions)
+        print("***************categorize_by", categorize_by)
+        print("***************bound", bound)
+        print("***************rank_by", rank_by)
+        print("***************join", join_condition)
+        result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by)
+        print("Query Result:")
+        return result
+    except Exception as e:
+        print(f"An error occurred: {e}")
