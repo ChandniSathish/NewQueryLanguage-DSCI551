@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import traceback
+
 
 # Define the list of token names
 tokens = (
@@ -312,8 +314,21 @@ def sort_data_by_field(data, field, reverse=False):
         raise ValueError("Unsupported data type for sorting")
 
 # Function to execute an "EXTRACT" query on the data
-def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None,project_fields=None,average_field=None,min_field=None,max_field=None,sum_by=None):
+def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None,project_fields=None,average_field=None,min_field=None,max_field=None,sum_by=None,count=None,unique=None):
     result = data
+    if project_fields:
+        print("Project",project_fields)
+        # Filter the fields based on the PROJECT clause
+        if isinstance(result, pd.DataFrame):
+            # Select only the specified columns
+            if all(field in result.columns for field in project_fields):
+                result = result[project_fields]
+            else:
+                missing_fields = [field for field in project_fields if field not in result.columns]
+                raise ValueError(f"Fields not found in DataFrame: {missing_fields}")
+        else:
+            raise ValueError("Unsupported data type for PROJECT")
+        
     if conditions:
         conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=')
         operators = {
@@ -382,6 +397,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                     j += 1
 
         if join_type == "LEFT":
+            # print("***********hii")
             while i < len(result_sorted):
                 row_left = result_sorted.iloc[i]
                 match_found = False
@@ -393,7 +409,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                         merged_data.append(merged_row)
                         match_found = True
                         j += 1
-                        sys.exit(1)  # sys.exit(1) the inner loop after finding the first match
+                        break  # sys.exit(1) the inner loop after finding the first match
                     j += 1
 
                 if not match_found:
@@ -419,7 +435,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                         merged_data.append(merged_row)
                         match_found = True
                         i += 1
-                        sys.exit(1)  # sys.exit(1) the inner loop after finding the first match
+                        break  # sys.exit(1) the inner loop after finding the first match
                     i += 1
 
                 if not match_found:
@@ -463,42 +479,40 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         # Handle other aggregate functions
         for agg_func in ['MAX', 'MIN', 'AVERAGE', 'SUM']:
             if agg_func in categorize_by['aggregate_function']:
+                print("aggregate2***********************")
                 func_index = categorize_by['aggregate_function'].index(agg_func)
                 if len(categorize_by['aggregate_function']) > func_index + 1:
+                    print("aggregate3***********************")
                     func_column = categorize_by['aggregate_function'][func_index + 1]
+                    print("func_column",func_column)
                     if func_column not in categorize_by['columns']:
+                        print("aggregate4***********************")
                         if agg_func == 'AVERAGE':
                             aggregation[func_column] = 'mean'
                         else:
                             aggregation[func_column] = agg_func.lower()
-
+        print("aggregate1***********************")
+        print(aggregation)
         # Apply the aggregation
         if aggregation:
             result = grouped_data.agg(aggregation).reset_index()
-
+            print("aggregate***********************")
             print(result)
 
         # if not isinstance(result, pd.DataFrame):
         #     result = pd.DataFrame(result)
 
-    if bound:
-        result = result[:bound['value']]
+    # if bound:
+    #     result = result[:bound['value']]
             
-    if project_fields:
-        # Filter the fields based on the PROJECT clause
-        if isinstance(result, list):
-            result = [{field: row.get(field, None) for field in project_fields} for row in result]
-        elif isinstance(result, dict):
-            for category, rows in result.items():
-                result[category] = [{field: row.get(field, None) for field in project_fields} for row in rows]
-        else:
-            raise ValueError("Unsupported data type for PROJECT")
 
     if rank_by:
         if rank_by['order_direction'].upper() == 'ASC':
             return result.sort_values(by=rank_by['column'], ascending=True)
-        else:
+        elif rank_by['order_direction'].upper() == 'DESC':
             return result.sort_values(by=rank_by['column'], ascending=False)
+        else:
+            return result.sort_values(by=rank_by['column'], ascending=True)
 
     if average_field:
         # Check if the result is a DataFrame
@@ -510,6 +524,20 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                 raise ValueError(f"{average_field} not found in DataFrame.")
         else:
             raise ValueError("Average calculation is only supported for pandas DataFrame.")
+        
+    if count:
+        if isinstance(result, pd.DataFrame):
+            if count in result.columns:
+                # Counting the number of non-null entries in the specified column
+                count_value = result[count].count()
+                # Returning the count as a DataFrame
+                return pd.DataFrame({count: [count_value]})
+            else:
+                # If the field is not found in the DataFrame
+                raise ValueError(f"{count} not found in DataFrame.")
+        else:
+            # If the input is not a DataFrame
+            raise ValueError("Count calculation is only supported for pandas DataFrame.")
 
 
     if min_field:
@@ -544,7 +572,23 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
                 raise ValueError(f"{sum_by} not found in DataFrame.")
         else:
             raise ValueError("Sum calculation is only supported for pandas DataFrame.")
+    
+    if unique:
+        # print("****************unique")
+        if isinstance(result, pd.DataFrame):
+            if unique in result.columns:
+                # Getting unique values from the specified column
+                distinct_values = result[unique].unique()
+                # Returning the distinct values as a DataFrame
+                return pd.DataFrame({unique: distinct_values})
+            else:
+                # If the field is not found in the DataFrame
+                raise ValueError(f"{unique} not found in DataFrame.")
+        else:
+            # If the input is not a DataFrame
+            raise ValueError("Distinct value extraction is only supported for pandas DataFrame.")
 
+    print(result)
     return result
     # return []
 
@@ -570,7 +614,10 @@ def parse_and_evaluate_query(data,query,components):
         min_field = None
         max_field = None
         sum_by = None
+        count = None
         join_condition = None
+        unique = None
+        KEYWORDS = ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE', 'MAX','MIN','SUM','AVERAGE','COUNT', 'INNER','LEFT','RIGHT','ASC','DESC']
 
         # Process the query parts
         while query_parts:
@@ -590,7 +637,7 @@ def parse_and_evaluate_query(data,query,components):
                     right_column = query_parts.pop(0)  # Pops 'columnB'
                     join_condition = {'join_type': type,'left_column': left_column, 'right_column': right_column}
                 else:
-                    print("Invalid INNER JOIN syntax.")
+                    print("Invalid JOIN syntax.")
                     sys.exit(1)
 
             if keyword == 'CATEGORIZE':
@@ -600,7 +647,7 @@ def parse_and_evaluate_query(data,query,components):
 
                 # Extract grouping columns
                 group_columns = []
-                while query_parts and query_parts[0] not in ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE']:
+                while query_parts and query_parts[0] not in KEYWORDS:
                     group_columns.append(query_parts.pop(0))
 
                 # Check if AGGREGATE is specified
@@ -647,10 +694,14 @@ def parse_and_evaluate_query(data,query,components):
                 bound = {'column': 'BOUND', 'value': bound_value}
         
             if keyword == 'PROJECT':
+                project_fields = []
                 if not query_parts:
                     print("Invalid query. Missing fields for 'PROJECT'.")
                     sys.exit(1)
-                project_fields = query_parts.pop(0).split(',')
+                while query_parts and query_parts[0] not in KEYWORDS:
+                    project_fields.append(query_parts.pop(0))
+                # ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE']
+                # project_fields = query_parts.pop(0).split(',')
 
             if keyword == 'RANK':
                 if not query_parts:
@@ -686,6 +737,18 @@ def parse_and_evaluate_query(data,query,components):
                     print("Invalid query. Missing field for 'SUM'.")
                     sys.exit(1)
                 sum_by = query_parts.pop(0)
+            
+            if keyword == 'COUNT':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'COUNT'.")
+                    sys.exit(1)
+                count = query_parts.pop(0)
+            
+            if keyword == 'UNIQUE':
+                if not query_parts:
+                    print("Invalid query. Missing field for 'DISTINCT'.")
+                    sys.exit(1)
+                unique = query_parts.pop(0)
 
         # Execute the query on the loaded data
         print("***************conditions", conditions)
@@ -694,8 +757,9 @@ def parse_and_evaluate_query(data,query,components):
         print("***************rank_by", rank_by)
         print("***************join", join_condition)
         print("****************min",min_field)
-        result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by)
+        print("****************project",project_fields)
+        result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by,count,unique)
         print("Query Result:")
         return result
     except Exception as e:
-        print(f"An error occurred: {e}")
+        traceback.print_exc()  
