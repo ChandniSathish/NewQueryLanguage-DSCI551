@@ -476,6 +476,11 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         if aggregation:
             result = grouped_data.agg(aggregation).reset_index()
 
+            print(result)
+
+        # if not isinstance(result, pd.DataFrame):
+        #     result = pd.DataFrame(result)
+
     if bound:
         result = result[:bound['value']]
             
@@ -490,73 +495,55 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
             raise ValueError("Unsupported data type for PROJECT")
 
     if rank_by:
-        # Implementing rank algorithm 
-        if isinstance(result, list):
-            n = len(result)
-            for i in range(n):
-                for j in range(0, n-i-1):
-                    comparison_result = result[j][rank_by['column']] > result[j+1][rank_by['column']]
-                    if (rank_by['order_direction'] == 'ASC' and comparison_result) or (rank_by['order_direction'] == 'DESC' and not comparison_result):
-                        result[j], result[j+1] = result[j+1], result[j]
-        elif isinstance(result, dict):
-            for category, rows in result.items():
-                n = len(rows)
-                for i in range(n):
-                    for j in range(0, n-i-1):
-                        comparison_result = rows[j][rank_by['column']] > rows[j+1][rank_by['column']]
-                        if (rank_by['order_direction'] == 'ASC' and comparison_result) or (rank_by['order_direction'] == 'DESC' and not comparison_result):
-                            rows[j], rows[j+1] = rows[j+1], rows[j]
+        if rank_by['order_direction'].upper() == 'ASC':
+            return result.sort_values(by=rank_by['column'], ascending=True)
         else:
-            raise ValueError("Unsupported data type for RANK")
+            return result.sort_values(by=rank_by['column'], ascending=False)
 
     if average_field:
-        # Calculate average for the specified field
-        if isinstance(result, list):
-            values = [row.get(average_field, 0) for row in result]
-            average_value = sum(values) / len(values) if len(values) > 0 else 0
-            result = {'average': average_value}
-        elif isinstance(result, dict):
-            averages = {}
-            for category, rows in result.items():
-                values = [row.get(average_field, 0) for row in rows]
-                average_value = sum(values) / len(values) if len(values) > 0 else 0
-                averages[category] = {'average': average_value}
-            result = averages
+        # Check if the result is a DataFrame
+        if isinstance(result, pd.DataFrame):
+            if average_field in result.columns:
+                average_value = result[average_field].mean()
+                result = pd.DataFrame({average_field: [average_value]})
+            else:
+                raise ValueError(f"{average_field} not found in DataFrame.")
+        else:
+            raise ValueError("Average calculation is only supported for pandas DataFrame.")
+
 
     if min_field:
-        if isinstance(data, list):
-            return min([row.get(min_field, 0) for row in data], default=0)
-        elif isinstance(data, dict):
-            mins = {}
-            for category, rows in data.items():
-                mins[category] = min([row.get(min_field, 0) for row in rows], default=0)
-            return mins
+        # Check if the result is a DataFrame
+        if isinstance(result, pd.DataFrame):
+            if min_field in result.columns:
+                min_value = result[min_field].min()
+                result = pd.DataFrame({min_field: [min_value]})
+            else:
+                raise ValueError(f"{min_field} not found in DataFrame.")
         else:
-            raise ValueError("Unsupported data type for MIN calculation")
+            raise ValueError("Minimum calculation is only supported for pandas DataFrame.")
         
     if max_field:
-        if isinstance(data, list):
-            return max([row.get(max_field, 0) for row in data], default=0)
-        elif isinstance(data, dict):
-            maxs = {}
-            for category, rows in data.items():
-                maxs[category] = max([row.get(max_field, 0) for row in rows], default=0)
-            return maxs
+        # Check if the result is a DataFrame
+        if isinstance(result, pd.DataFrame):
+            if max_field in result.columns:
+                max_value = result[max_field].max()
+                result = pd.DataFrame({max_field: [max_value]})
+            else:
+                raise ValueError(f"{max_field} not found in DataFrame.")
         else:
-            raise ValueError("Unsupported data type for MAX calculation")
+            raise ValueError("Maximum calculation is only supported for pandas DataFrame.")
         
     if sum_by:
-        if isinstance(result, list):
-            values = [row.get(sum_by, 0) for row in result]
-            sum_value = sum(values)
-            result = {'sum': sum_value}
-        elif isinstance(result, dict):
-            sum_vals = {}
-            for category, rows in result.items():
-                values = [row.get(sum_by, 0) for row in rows]
-                sum_value = sum(values)
-                sum[category] = {'sum': sum_value}
-            result = sum_vals
+        # Check if the result is a DataFrame
+        if isinstance(result, pd.DataFrame):
+            if sum_by in result.columns:
+                sum_value = result[sum_by].sum()
+                result = pd.DataFrame({sum_by: [sum_value]})
+            else:
+                raise ValueError(f"{sum_by} not found in DataFrame.")
+        else:
+            raise ValueError("Sum calculation is only supported for pandas DataFrame.")
 
     return result
     # return []
@@ -564,7 +551,7 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
 
 # Main program
 def parse_and_evaluate_query(data,query,components):
-    print("hi???")
+    # print("hi???")
     try:
 
         if len(components) < 4:
@@ -706,6 +693,7 @@ def parse_and_evaluate_query(data,query,components):
         print("***************bound", bound)
         print("***************rank_by", rank_by)
         print("***************join", join_condition)
+        print("****************min",min_field)
         result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by)
         print("Query Result:")
         return result
