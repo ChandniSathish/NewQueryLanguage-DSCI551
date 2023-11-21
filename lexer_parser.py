@@ -7,6 +7,7 @@ import numpy as np
 import os
 import re
 import traceback
+import wrapper
 
 
 # Define the list of token names
@@ -314,22 +315,12 @@ def sort_data_by_field(data, field, reverse=False):
         raise ValueError("Unsupported data type for sorting")
 
 # Function to execute an "EXTRACT" query on the data
-def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None,project_fields=None,average_field=None,min_field=None,max_field=None,sum_by=None,count=None,unique=None):
+def execute_extract_query(data, conditions=None, categorize_by=None, bound=None, rank_by=None,join=None,project_fields=None,average_field=None,min_field=None,max_field=None,sum_by=None,count=None,unique=None,similar_pattern=None):
     result = data
-    if project_fields:
-        print("Project",project_fields)
-        # Filter the fields based on the PROJECT clause
-        if isinstance(result, pd.DataFrame):
-            # Select only the specified columns
-            if all(field in result.columns for field in project_fields):
-                result = result[project_fields]
-            else:
-                missing_fields = [field for field in project_fields if field not in result.columns]
-                raise ValueError(f"Fields not found in DataFrame: {missing_fields}")
-        else:
-            raise ValueError("Unsupported data type for PROJECT")
+    
         
     if conditions:
+        # conditions = "sepalLength EQ 6"
         conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=')
         operators = {
             '=': lambda x, y: x == y,
@@ -343,6 +334,9 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         left_column = conditions[0]
         operator = conditions[1]
         right_operand = conditions[2]
+
+        print("left_col",left_column,"operator",operator,"right_operand",right_operand)
+
         # Check if right_operand is a column name or a constant
         if right_operand in result.columns:
             right_values = result[right_operand]
@@ -357,96 +351,97 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         # Apply the condition
         result = result[[operators[operator](left_value, right_value) for left_value, right_value in zip(result[left_column], right_values)]]
 
-    if join:
-        # join_condition = {'join_type': type,'left_column': left_column, 'right_column': right_column}
-        # join_condition = join.split(" ") 
-        join_type = join['join_type']
-        left_column = join['left_column']
-        right_column = join['right_column']
+    # if join:
+    #     # wrapper.split_by_chunks_and_join(join)
+    #     # join_condition = {'join_type': type,'left_column': left_column, 'right_column': right_column}
+    #     # join_condition = join.split(" ") 
+    #     join_type = join['join_type']
+    #     left_column = join['left_column']
+    #     right_column = join['right_column']
 
-        # Sort the dataframes
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        csv_file_path = os.path.join(script_directory, 'iris2.csv')
-        result = pd.read_csv(csv_file_path, sep=',')
+    #     # Sort the dataframes
+    #     script_directory = os.path.dirname(os.path.abspath(__file__))
+    #     csv_file_path = os.path.join(script_directory, 'hibiscus2.csv')
+    #     result = pd.read_csv(csv_file_path, sep=',')
 
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        csv_file_path = os.path.join(script_directory, 'iris1.csv')
-        result1 = pd.read_csv(csv_file_path, sep=',')
+    #     script_directory = os.path.dirname(os.path.abspath(__file__))
+    #     csv_file_path = os.path.join(script_directory, 'hibiscus1.csv')
+    #     result1 = pd.read_csv(csv_file_path, sep=',')
 
-        result_sorted = result.sort_values(by=left_column)
-        other_df_sorted = result1.sort_values(by=right_column)
+    #     result_sorted = result.sort_values(by=left_column)
+    #     other_df_sorted = result1.sort_values(by=right_column)
         
-        merged_data = []
-        i, j = 0, 0
-        if join_type == "INNER":
-            # Manual Inner Join
-            while i < len(result_sorted) and j < len(other_df_sorted):
-                row_left = result_sorted.iloc[i]
-                row_right = other_df_sorted.iloc[j]
+    #     merged_data = []
+    #     i, j = 0, 0
+    #     if join_type == "INNER":
+    #         # Manual Inner Join
+    #         while i < len(result_sorted) and j < len(other_df_sorted):
+    #             row_left = result_sorted.iloc[i]
+    #             row_right = other_df_sorted.iloc[j]
 
-                if row_left[left_column] == row_right[right_column]:
-                    print(row_left,row_right)
-                    merged_row = pd.concat([row_left, row_right]).to_dict()
-                    print("merged_row",merged_row)
-                    merged_data.append(merged_row)
-                    i += 1
-                    j += 1
-                elif row_left[left_column] < row_right[right_column]:
-                    i += 1
-                else:
-                    j += 1
+    #             if row_left[left_column] == row_right[right_column]:
+    #                 print(row_left,row_right)
+    #                 merged_row = pd.concat([row_left, row_right]).to_dict()
+    #                 print("merged_row",merged_row)
+    #                 merged_data.append(merged_row)
+    #                 i += 1
+    #                 j += 1
+    #             elif row_left[left_column] < row_right[right_column]:
+    #                 i += 1
+    #             else:
+    #                 j += 1
 
-        if join_type == "LEFT":
-            # print("***********hii")
-            while i < len(result_sorted):
-                row_left = result_sorted.iloc[i]
-                match_found = False
+    #     if join_type == "LEFT":
+    #         # print("***********hii")
+    #         while i < len(result_sorted):
+    #             row_left = result_sorted.iloc[i]
+    #             match_found = False
 
-                while j < len(other_df_sorted) and row_left[left_column] >= other_df_sorted.iloc[j][right_column]:
-                    row_right = other_df_sorted.iloc[j]
-                    if row_left[left_column] == row_right[right_column]:
-                        merged_row = pd.concat([row_left, row_right]).to_dict()
-                        merged_data.append(merged_row)
-                        match_found = True
-                        j += 1
-                        break  # sys.exit(1) the inner loop after finding the first match
-                    j += 1
+    #             while j < len(other_df_sorted) and row_left[left_column] >= other_df_sorted.iloc[j][right_column]:
+    #                 row_right = other_df_sorted.iloc[j]
+    #                 if row_left[left_column] == row_right[right_column]:
+    #                     merged_row = pd.concat([row_left, row_right]).to_dict()
+    #                     merged_data.append(merged_row)
+    #                     match_found = True
+    #                     j += 1
+    #                     break  # sys.exit(1) the inner loop after finding the first match
+    #                 j += 1
 
-                if not match_found:
-                    # For no match, include left row with NaNs for right columns
-                    merged_row = pd.concat([row_left, pd.Series([pd.NA] * len(other_df_sorted.columns), index=other_df_sorted.columns)]).to_dict()
-                    merged_data.append(merged_row)
+    #             if not match_found:
+    #                 # For no match, include left row with NaNs for right columns
+    #                 merged_row = pd.concat([row_left, pd.Series([pd.NA] * len(other_df_sorted.columns), index=other_df_sorted.columns)]).to_dict()
+    #                 merged_data.append(merged_row)
 
-                i += 1
+    #             i += 1
 
-        if join_type == "RIGHT":
-            # Manual Right Outer Join
-            merged_data = []
-            i, j = 0, 0
+    #     if join_type == "RIGHT":
+    #         # Manual Right Outer Join
+    #         merged_data = []
+    #         i, j = 0, 0
 
-            while j < len(other_df_sorted):
-                row_right = other_df_sorted.iloc[j]
-                match_found = False
+    #         while j < len(other_df_sorted):
+    #             row_right = other_df_sorted.iloc[j]
+    #             match_found = False
 
-                while i < len(result_sorted) and result_sorted.iloc[i][left_column] <= row_right[right_column]:
-                    row_left = result_sorted.iloc[i]
-                    if row_left[left_column] == row_right[right_column]:
-                        merged_row = pd.concat([row_left, row_right]).to_dict()
-                        merged_data.append(merged_row)
-                        match_found = True
-                        i += 1
-                        break  # sys.exit(1) the inner loop after finding the first match
-                    i += 1
+    #             while i < len(result_sorted) and result_sorted.iloc[i][left_column] <= row_right[right_column]:
+    #                 row_left = result_sorted.iloc[i]
+    #                 if row_left[left_column] == row_right[right_column]:
+    #                     merged_row = pd.concat([row_left, row_right]).to_dict()
+    #                     merged_data.append(merged_row)
+    #                     match_found = True
+    #                     i += 1
+    #                     break  # sys.exit(1) the inner loop after finding the first match
+    #                 i += 1
 
-                if not match_found:
-                    # For no match, include right row with NaNs for left columns
-                    merged_row = pd.concat([pd.Series([pd.NA] * len(result_sorted.columns), index=result_sorted.columns), row_right]).to_dict()
-                    merged_data.append(merged_row)
+    #             if not match_found:
+    #                 # For no match, include right row with NaNs for left columns
+    #                 merged_row = pd.concat([pd.Series([pd.NA] * len(result_sorted.columns), index=result_sorted.columns), row_right]).to_dict()
+    #                 merged_data.append(merged_row)
 
-                j += 1
+    #             j += 1
 
-         # Convert merged data to DataFrame
-        result = pd.DataFrame(merged_data)
+    #      # Convert merged data to DataFrame
+    #     result = pd.DataFrame(merged_data)
 
     if categorize_by:
         grouped_data = data.groupby(categorize_by['columns'])
@@ -506,13 +501,13 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
     #     result = result[:bound['value']]
             
 
-    if rank_by:
-        if rank_by['order_direction'].upper() == 'ASC':
-            return result.sort_values(by=rank_by['column'], ascending=True)
-        elif rank_by['order_direction'].upper() == 'DESC':
-            return result.sort_values(by=rank_by['column'], ascending=False)
-        else:
-            return result.sort_values(by=rank_by['column'], ascending=True)
+    # if rank_by:
+    #     if rank_by['order_direction'].upper() == 'ASC':
+    #         return result.sort_values(by=rank_by['column'], ascending=True)
+    #     elif rank_by['order_direction'].upper() == 'DESC':
+    #         return result.sort_values(by=rank_by['column'], ascending=False)
+    #     else:
+    #         return result.sort_values(by=rank_by['column'], ascending=True)
 
     if average_field:
         # Check if the result is a DataFrame
@@ -587,8 +582,44 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         else:
             # If the input is not a DataFrame
             raise ValueError("Distinct value extraction is only supported for pandas DataFrame.")
+    if similar_pattern:
+        print("similar")
+        left_column = similar_pattern[0]
+        similar_pattern.pop(0)
+        similar_pattern = ''.join(similar_pattern)
+        print("similar_pattern", similar_pattern)
+
+        # Ensure the DataFrame's index starts from 0
+        data.reset_index(drop=True, inplace=True)
+
+        # Build regex pattern
+        if similar_pattern[0] == "*" and similar_pattern[-1] == "*":
+            regex_pattern = similar_pattern.replace('*', '.*')
+        elif similar_pattern[-1] == "*":
+            regex_pattern = '^' + similar_pattern.replace('*', '.*')
+        elif similar_pattern[0] == "*":
+            regex_pattern = similar_pattern.replace('*', '.*') + '$'
+
+        # Apply regex pattern to the DataFrame
+        result = result[result[left_column].str.contains(regex_pattern, flags=re.IGNORECASE, na=False)]
+    
+    if project_fields:
+        print("Project",project_fields)
+        # Filter the fields based on the PROJECT clause
+        if isinstance(result, pd.DataFrame):
+            # Select only the specified columns
+            if all(field in result.columns for field in project_fields):
+                result = result[project_fields]
+            else:
+                missing_fields = [field for field in project_fields if field not in result.columns]
+                raise ValueError(f"Fields not found in DataFrame: {missing_fields}")
+        else:
+            raise ValueError("Unsupported data type for PROJECT")
 
     print(result)
+    if isinstance(result, list):
+        columns = data.columns
+        result = pd.DataFrame(result, columns=columns)
     return result
     # return []
 
@@ -617,7 +648,8 @@ def parse_and_evaluate_query(data,query,components):
         count = None
         join_condition = None
         unique = None
-        KEYWORDS = ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE', 'MAX','MIN','SUM','AVERAGE','COUNT', 'INNER','LEFT','RIGHT','ASC','DESC']
+        similar_pattern = None
+        KEYWORDS = ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE', 'MAX','MIN','SUM','AVERAGE','COUNT', 'INNER','LEFT','RIGHT','ASC','DESC','SIMILAR', 'CATEGORIZE','BY']
 
         # Process the query parts
         while query_parts:
@@ -665,21 +697,26 @@ def parse_and_evaluate_query(data,query,components):
                 categorize_by = {'columns': group_columns, 'aggregate_function':aggregate_function}
 
             if keyword == 'WHEN':
-                print("hi???")
-                if not query_parts:
-                    print("Invalid query. Missing condition.")
-                    sys.exit(1)
-                conditions = ' '.join(query_parts)
-                
+                # print("hi???")
+                # print("query_parts",query_parts)
+                condition_parts = []
+                while query_parts and query_parts[0] not in KEYWORDS:
+                    query_part = query_parts.pop(0)
+                    # print("query_part", query_part)
+                    condition_parts.append(query_part)
 
-            if keyword == 'LIKE':
-                if not query_parts:
-                    print("Invalid query. Missing pattern for 'LIKE'.")
-                    sys.exit(1)
-                if conditions:
-                    conditions += f" and {categorize_by} like '{query_parts.pop(0)}'"
-                else:
-                    conditions = f"{categorize_by} like '{query_parts.pop(0)}'"
+                conditions = ' '.join(condition_parts)
+                print("conditions", conditions)
+                
+                # sys.exit(1)
+            # if keyword == 'LIKE':
+            #     if not query_parts:
+            #         print("Invalid query. Missing pattern for 'LIKE'.")
+            #         sys.exit(1)
+            #     if conditions:
+            #         conditions += f" and {categorize_by} like '{query_parts.pop(0)}'"
+            #     else:
+            #         conditions = f"{categorize_by} like '{query_parts.pop(0)}'"
 
             if keyword == 'BOUND':
                 if not query_parts:
@@ -699,6 +736,8 @@ def parse_and_evaluate_query(data,query,components):
                     print("Invalid query. Missing fields for 'PROJECT'.")
                     sys.exit(1)
                 while query_parts and query_parts[0] not in KEYWORDS:
+                    if query_parts[0] in KEYWORDS:
+                        break
                     project_fields.append(query_parts.pop(0))
                 # ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE']
                 # project_fields = query_parts.pop(0).split(',')
@@ -713,6 +752,16 @@ def parse_and_evaluate_query(data,query,components):
                     if query_parts.pop(0) == 'DESC':
                         order_direction = 'DESC'
                 rank_by = {'column': rank_column, 'order_direction': order_direction}
+
+            if keyword == 'SIMILAR':
+                similar_pattern = []
+                if not query_parts:
+                    print("Invalid query. Missing field for 'LIKE'.")
+                    sys.exit(1)
+                while query_parts and query_parts[0] not in KEYWORDS:
+                    if query_parts[0] in KEYWORDS:
+                        break
+                    similar_pattern.append(query_parts.pop(0))
 
             if keyword == 'AVERAGE':
                 if not query_parts:
@@ -758,7 +807,8 @@ def parse_and_evaluate_query(data,query,components):
         print("***************join", join_condition)
         print("****************min",min_field)
         print("****************project",project_fields)
-        result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by,count,unique)
+        print("****************similar",similar_pattern)
+        result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by,count,unique,similar_pattern)
         print("Query Result:")
         return result
     except Exception as e:

@@ -6,6 +6,7 @@ import os
 import crud_sql
 import lexer_parser
 from datetime import datetime
+KEYWORDS = ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE', 'MAX','MIN','SUM','AVERAGE','COUNT', 'INNER','LEFT','RIGHT','ASC','DESC','SLICE','SIMILAR']
 
 def calculate_final_averages(final_results):
     # Calculate the average for each variety
@@ -73,11 +74,8 @@ def categorize_and_aggregate(data,categorize_by):
     # Handle COUNT separately to avoid column conflict
     count_column = None
     if 'COUNT' in categorize_by['aggregate_function']:
-        count_index = categorize_by['aggregate_function'].index('COUNT')
-        if len(categorize_by['aggregate_function']) > count_index + 1:
-            count_column = categorize_by['aggregate_function'][count_index + 1]
-            if count_column not in categorize_by['columns']:
-                aggregation[count_column] = 'count'
+        index = categorize_by['aggregate_function'].index('COUNT')
+        categorize_by['aggregate_function'][index] = 'SUM'
 
     # Handle other aggregate functions
     for agg_func in ['MAX', 'MIN', 'AVERAGE', 'SUM']:
@@ -103,27 +101,171 @@ def categorize_and_aggregate(data,categorize_by):
         print(result)
     return result
 
-def split_by_chunks(query,components):
+def join_data(result,result1,join):
+    print("join type",join)
+    join_type = join['join_type']
+    left_column = join['left_column']
+    right_column = join['right_column']
+
+    
+
+    # Sort the dataframes
+    # script_directory = os.path.dirname(os.path.abspath(__file__))
+    # csv_file_path = os.path.join(script_directory, 'hibiscus2.csv')
+    # result = pd.read_csv(csv_file_path, sep=',')
+
+    # script_directory = os.path.dirname(os.path.abspath(__file__))
+    # csv_file_path = os.path.join(script_directory, 'hibiscus1.csv')
+    # result1 = pd.read_csv(csv_file_path, sep=',')
+
+    # print("result1","result2")
+    # print(result,result1)
+
+    result_sorted = result.sort_values(by=left_column)
+    other_df_sorted = result1.sort_values(by=right_column)
+    
+    merged_data = []
+    i, j = 0, 0
+   # Assuming result_sorted is result1 and other_df_sorted is result2
+    
+    if join_type == "INNER":
+        # Manual Inner Join
+        while i < len(result_sorted) and j < len(other_df_sorted):
+            row_left = result_sorted.iloc[i]
+            row_right = other_df_sorted.iloc[j]
+
+            if row_left[left_column] == row_right[right_column]:
+                print(row_left,row_right)
+                merged_row = pd.concat([row_left, row_right]).to_dict()
+                print("merged_row",merged_row)
+                merged_data.append(merged_row)
+                i += 1
+                j += 1
+            elif row_left[left_column] < row_right[right_column]:
+                i += 1
+            else:
+                j += 1
+
+    if join_type == "LEFT":
+        # print("***********hii")
+        while i < len(result_sorted):
+            row_left = result_sorted.iloc[i]
+            match_found = False
+
+            while j < len(other_df_sorted) and row_left[left_column] >= other_df_sorted.iloc[j][right_column]:
+                row_right = other_df_sorted.iloc[j]
+                if row_left[left_column] == row_right[right_column]:
+                    merged_row = pd.concat([row_left, row_right]).to_dict()
+                    merged_data.append(merged_row)
+                    match_found = True
+                    j += 1
+                    break  # sys.exit(1) the inner loop after finding the first match
+                j += 1
+
+            if not match_found:
+                # For no match, include left row with NaNs for right columns
+                merged_row = pd.concat([row_left, pd.Series([pd.NA] * len(other_df_sorted.columns), index=other_df_sorted.columns)]).to_dict()
+                merged_data.append(merged_row)
+
+            i += 1
+
+    if join_type == "RIGHT":
+        # Manual Right Outer Join
+        merged_data = []
+        i, j = 0, 0
+
+        while j < len(other_df_sorted):
+            row_right = other_df_sorted.iloc[j]
+            match_found = False
+
+            while i < len(result_sorted) and result_sorted.iloc[i][left_column] <= row_right[right_column]:
+                row_left = result_sorted.iloc[i]
+                if row_left[left_column] == row_right[right_column]:
+                    merged_row = pd.concat([row_left, row_right]).to_dict()
+                    merged_data.append(merged_row)
+                    match_found = True
+                    i += 1
+                    break  # sys.exit(1) the inner loop after finding the first match
+                i += 1
+
+            if not match_found:
+                # For no match, include right row with NaNs for left columns
+                merged_row = pd.concat([pd.Series([pd.NA] * len(result_sorted.columns), index=result_sorted.columns), row_right]).to_dict()
+                merged_data.append(merged_row)
+
+            j += 1
+
+    # Convert merged data to DataFrame
+    result = pd.DataFrame(merged_data)
+    return result
+
+def get_join_hash(query,components):
+    rank_fields = []
+    query_parts = query.split("JOIN")[1].strip()
+    join_type = query.split("JOIN")[0].strip().split()[-1]
+    query_parts = query_parts.split()
+    if len(query_parts) >= 3 and query_parts[1] == '=':
+        left_column = query_parts.pop(0)  # Pops 'columnA'
+        query_parts.pop(0)  # Pops '='
+        right_column = query_parts.pop(0)  # Pops 'columnB'
+        join_condition = {'join_type': join_type,'left_column': left_column, 'right_column': right_column}
+    else:
+        print("Invalid JOIN syntax.")
+        sys.exit(1)
+    return join_condition
+
+
+def split_by_chunks_and_join(query,components,chunk_size):
+    print("****************join chunk")
+    # Get the script directory
     script_directory = os.path.dirname(os.path.abspath(__file__))
-    csv_file_path = os.path.join(script_directory, 'iris.csv')
 
+    # Define file paths
+    csv_file_path1 = os.path.join(script_directory, 'hibiscus1.csv')
+    csv_file_path2 = os.path.join(script_directory, 'hibiscus2.csv')
+
+    # Initialize a variable to store the final result
+    final_result1 = pd.DataFrame()
+    final_result2 = pd.DataFrame()
+
+    # Use pd.read_csv with chunksize for both files
+    chunk_iter1 = pd.read_csv(csv_file_path1, sep=',', chunksize=chunk_size)
+    chunk_iter2 = pd.read_csv(csv_file_path2, sep=',', chunksize=chunk_size)
+
+    # Iterate over both file chunks simultaneously
+    for chunk1, chunk2 in zip(chunk_iter1, chunk_iter2):
+        # Process the chunks
+        processed_chunk1 = lexer_parser.parse_and_evaluate_query(chunk1, query, components)
+        processed_chunk2 = lexer_parser.parse_and_evaluate_query(chunk2, query, components)
+
+        final_result1 = pd.concat([final_result1, processed_chunk1])
+        final_result2 = pd.concat([final_result2, processed_chunk2])
+    
+    join_details = get_join_hash(query,components)
+    print("join_details",join_details)
+
+    # Generate the iterators for both final results
+    chunk_iter1 = (final_result1[i:i + chunk_size] for i in range(0, len(final_result1), chunk_size))
+    chunk_iter2 = (final_result2[i:i + chunk_size] for i in range(0, len(final_result2), chunk_size))
+
+    final_joined_result = pd.DataFrame()
+
+    for chunk1, chunk2 in zip(chunk_iter1, chunk_iter2):
+        # Process the chunks
+        joined_chunk = join_data(chunk1, chunk2, join_details)
+        final_joined_result = pd.concat([final_joined_result, joined_chunk])
+
+    # print("final_joined_result")
+    print(final_joined_result)
+    return final_joined_result
+
+
+def split_by_chunks(query,components):
     chunk_size = 50  # Define your chunk size
-    final_result = pd.DataFrame()
-    final_aggregations = pd.DataFrame()
-    chunk_sum = 0
-    KEYWORDS = ['WHEN', 'LIKE', 'BOUND', 'RANK', 'PROJECT', 'AGGREGATE', 'UNIQUE', 'MAX','MIN','SUM','AVERAGE','COUNT', 'INNER','LEFT','RIGHT','ASC','DESC','SLICE']
-    for chunk in pd.read_csv(csv_file_path, sep=',', chunksize=chunk_size):
-        processed_chunk = lexer_parser.parse_and_evaluate_query(chunk,query,components)
-        chunk_sum += chunk_size
-        
 
-        # print("*************type",type(processed_chunk))
-
-        if isinstance(processed_chunk, dict):
-            final_result = merge_dictionaries(final_result, processed_chunk)
-        else:
-            final_result = pd.concat([final_result, processed_chunk])
-        if  'BOUND' in components and chunk_sum > int(components[-1]):
+    if 'JOIN' in components:
+        final_result = split_by_chunks_and_join(query,components,chunk_size)
+        if  'BOUND' in components:
             query_parts = query.split("BOUND")[1].strip()
             query_parts = query_parts.split()
             if 'SLICE' in components:
@@ -131,20 +273,52 @@ def split_by_chunks(query,components):
                 if bound_range <= len(final_result):
                     print("bound_range",bound_range)
                     final_result = final_result[int(query_parts[-1]):bound_range]
-                    break
             else:
                 bound_range = int(query_parts[0])
                 final_result = final_result[:bound_range]
-                break
+    else:
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        csv_file_path = os.path.join(script_directory, 'hibiscus.csv')
+
+        final_result = pd.DataFrame()
+        final_aggregations = pd.DataFrame()
+        chunk_sum = 0
+        for chunk in pd.read_csv(csv_file_path, sep=',', chunksize=chunk_size):
+            processed_chunk = lexer_parser.parse_and_evaluate_query(chunk,query,components)
+            chunk_sum += chunk_size
+            
+
+            # print("*************type",type(processed_chunk))
+
+            if isinstance(processed_chunk, dict):
+                final_result = merge_dictionaries(final_result, processed_chunk)
+            else:
+                final_result = pd.concat([final_result, processed_chunk])
+            
     # final_result = finalize_aggregations(final_aggregations)
     # agg_func =  ['MAX', 'MIN', 'AVERAGE', 'SUM','COUNT']
     #EXTRACT $ USING data CATEGORIZE BY sepalLength AGGREGATE BY COUNT sepalLength
 
-    print("******final_result1",final_result)
+    # print("******final_result1",final_result)
+    if  'BOUND' in components:
+        query_parts = query.split("BOUND")[1].strip()
+        query_parts = query_parts.split()
+        if 'SLICE' in components:
+            bound_range = int(query_parts[-1])+int(query_parts[0])
+            if bound_range <= len(final_result):
+                print("bound_range",bound_range)
+                final_result = final_result[int(query_parts[-1]):bound_range]
+                
+        else:
+            bound_range = int(query_parts[0])
+            final_result = final_result[:bound_range]
+            # print("bound_range",bound_range)
+            # print("bound result",final_result[:bound_range])
+            
     if isinstance(final_result, dict):
         final_result = pd.DataFrame(final_result)
 
-    if 'CATEGORIZE' in components:
+    if 'CATEGORIZE' in components and 'AGGREGATE' in components:
         group_columns = []
         query_parts = query.split("BY")[1].strip()
         query_parts = query_parts.split()
@@ -233,6 +407,7 @@ def split_by_chunks(query,components):
     print(final_result)
 
     # Output directory
+    script_directory = os.path.dirname(os.path.abspath(__file__))
     output_directory = os.path.join(script_directory, 'output')
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
@@ -244,6 +419,26 @@ def split_by_chunks(query,components):
 
     # Save the final result to the new CSV file
     final_result.to_csv(output_filepath, index=False)
+
+# def process_crud_in_chunks(query):
+#     script_directory = os.path.dirname(os.path.abspath(__file__))
+#     csv_file_path = os.path.join(script_directory, 'hibiscus.csv')
+
+#     final_result = pd.DataFrame()
+#     final_aggregations = pd.DataFrame()
+#     chunk_sum = 0
+#     for chunk in pd.read_csv(csv_file_path, sep=',', chunksize=chunk_size):
+#         processed_chunk = lexer_parser.parse_and_evaluate_query(chunk,query,components)
+#         chunk_sum += chunk_size
+        
+
+#         # print("*************type",type(processed_chunk))
+
+#         if isinstance(processed_chunk, dict):
+#             final_result = merge_dictionaries(final_result, processed_chunk)
+#         else:
+#             final_result = pd.concat([final_result, processed_chunk])
+            
 
 # Main program
 if __name__ == "__main__":
