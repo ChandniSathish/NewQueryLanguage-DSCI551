@@ -100,100 +100,50 @@ def categorize_and_aggregate(data,categorize_by):
         # print("aggregate***********************")
         print(result)
     return result
-
-def join_data(result,result1,join):
-    print("join type",join)
+def join_data(result, result1, join):
+    print("join type", join)
     join_type = join['join_type']
     left_column = join['left_column']
     right_column = join['right_column']
 
-    
-
-    # Sort the dataframes
-    # script_directory = os.path.dirname(os.path.abspath(__file__))
-    # csv_file_path = os.path.join(script_directory, 'hibiscus2.csv')
-    # result = pd.read_csv(csv_file_path, sep=',')
-
-    # script_directory = os.path.dirname(os.path.abspath(__file__))
-    # csv_file_path = os.path.join(script_directory, 'hibiscus1.csv')
-    # result1 = pd.read_csv(csv_file_path, sep=',')
-
-    # print("result1","result2")
-    # print(result,result1)
-
     result_sorted = result.sort_values(by=left_column)
     other_df_sorted = result1.sort_values(by=right_column)
-    
+
     merged_data = []
     i, j = 0, 0
-   # Assuming result_sorted is result1 and other_df_sorted is result2
-    
-    if join_type == "INNER":
-        # Manual Inner Join
-        while i < len(result_sorted) and j < len(other_df_sorted):
-            row_left = result_sorted.iloc[i]
-            row_right = other_df_sorted.iloc[j]
 
-            if row_left[left_column] == row_right[right_column]:
-                print(row_left,row_right)
-                merged_row = pd.concat([row_left, row_right]).to_dict()
-                print("merged_row",merged_row)
-                merged_data.append(merged_row)
-                i += 1
-                j += 1
-            elif row_left[left_column] < row_right[right_column]:
-                i += 1
-            else:
-                j += 1
+    if join_type == "INNER":
+        for index_left, row_left in result_sorted.iterrows():
+            for index_right, row_right in other_df_sorted.iterrows():
+                if row_left[left_column] == row_right[right_column]:
+                    merged_row = {**row_left.to_dict(), **row_right.to_dict()}
+                    merged_data.append(merged_row)
 
     if join_type == "LEFT":
-        # print("***********hii")
-        while i < len(result_sorted):
-            row_left = result_sorted.iloc[i]
+        for index_left, row_left in result_sorted.iterrows():
             match_found = False
-
-            while j < len(other_df_sorted) and row_left[left_column] >= other_df_sorted.iloc[j][right_column]:
-                row_right = other_df_sorted.iloc[j]
+            for index_right, row_right in other_df_sorted.iterrows():
                 if row_left[left_column] == row_right[right_column]:
-                    merged_row = pd.concat([row_left, row_right]).to_dict()
+                    merged_row = {**row_left.to_dict(), **row_right.to_dict()}
                     merged_data.append(merged_row)
                     match_found = True
-                    j += 1
-                    break  # sys.exit(1) the inner loop after finding the first match
-                j += 1
-
+                    break  # Exit the inner loop after finding the first match
             if not match_found:
-                # For no match, include left row with NaNs for right columns
-                merged_row = pd.concat([row_left, pd.Series([pd.NA] * len(other_df_sorted.columns), index=other_df_sorted.columns)]).to_dict()
+                merged_row = {**row_left.to_dict(), **{col: pd.NA for col in other_df_sorted.columns}}
                 merged_data.append(merged_row)
-
-            i += 1
 
     if join_type == "RIGHT":
-        # Manual Right Outer Join
-        merged_data = []
-        i, j = 0, 0
-
-        while j < len(other_df_sorted):
-            row_right = other_df_sorted.iloc[j]
+        for index_right, row_right in other_df_sorted.iterrows():
             match_found = False
-
-            while i < len(result_sorted) and result_sorted.iloc[i][left_column] <= row_right[right_column]:
-                row_left = result_sorted.iloc[i]
+            for index_left, row_left in result_sorted.iterrows():
                 if row_left[left_column] == row_right[right_column]:
-                    merged_row = pd.concat([row_left, row_right]).to_dict()
+                    merged_row = {**row_left.to_dict(), **row_right.to_dict()}
                     merged_data.append(merged_row)
                     match_found = True
-                    i += 1
-                    break  # sys.exit(1) the inner loop after finding the first match
-                i += 1
-
+                    break  # Exit the inner loop after finding the first match
             if not match_found:
-                # For no match, include right row with NaNs for left columns
-                merged_row = pd.concat([pd.Series([pd.NA] * len(result_sorted.columns), index=result_sorted.columns), row_right]).to_dict()
+                merged_row = {**{col: pd.NA for col in result_sorted.columns}, **row_right.to_dict()}
                 merged_data.append(merged_row)
-
-            j += 1
 
     # Convert merged data to DataFrame
     result = pd.DataFrame(merged_data)
@@ -216,7 +166,7 @@ def get_join_hash(query,components):
 
 
 def split_by_chunks_and_join(query,components,chunk_size):
-    print("****************join chunk")
+    # print("****************join chunk")
     # Get the script directory
     script_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -242,7 +192,7 @@ def split_by_chunks_and_join(query,components,chunk_size):
         final_result2 = pd.concat([final_result2, processed_chunk2])
     
     join_details = get_join_hash(query,components)
-    print("join_details",join_details)
+    # print("join_details",join_details)
 
     # Generate the iterators for both final results
     chunk_iter1 = (final_result1[i:i + chunk_size] for i in range(0, len(final_result1), chunk_size))
@@ -256,7 +206,7 @@ def split_by_chunks_and_join(query,components,chunk_size):
         final_joined_result = pd.concat([final_joined_result, joined_chunk])
 
     # print("final_joined_result")
-    print(final_joined_result)
+    # print(final_joined_result)
     return final_joined_result
 
 
@@ -271,7 +221,7 @@ def split_by_chunks(query,components):
             if 'SLICE' in components:
                 bound_range = int(query_parts[-1])+int(query_parts[0])
                 if bound_range <= len(final_result):
-                    print("bound_range",bound_range)
+                    # print("bound_range",bound_range)
                     final_result = final_result[int(query_parts[-1]):bound_range]
             else:
                 bound_range = int(query_parts[0])
@@ -306,7 +256,7 @@ def split_by_chunks(query,components):
         if 'SLICE' in components:
             bound_range = int(query_parts[-1])+int(query_parts[0])
             if bound_range <= len(final_result):
-                print("bound_range",bound_range)
+                # print("bound_range",bound_range)
                 final_result = final_result[int(query_parts[-1]):bound_range]
                 
         else:
@@ -324,7 +274,7 @@ def split_by_chunks(query,components):
         query_parts = query_parts.split()
         while query_parts and query_parts[0] not in KEYWORDS:
             group_columns.append(query_parts.pop(0))
-            print(group_columns)
+            # print(group_columns)
         
         # Check if AGGREGATE is specified
         aggregate_function = []
@@ -341,7 +291,7 @@ def split_by_chunks(query,components):
                 # aggregate_function = query_parts.pop(0)
 
         categorize_by = {'columns': group_columns, 'aggregate_function':aggregate_function}
-        print("categorize_by",categorize_by)
+        # print("categorize_by",categorize_by)
         final_result = categorize_and_aggregate(final_result,categorize_by)
 
     if 'UNIQUE' in components:

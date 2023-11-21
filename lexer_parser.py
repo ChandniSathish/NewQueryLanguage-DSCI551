@@ -321,50 +321,57 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
         
     if conditions:
         # conditions = "sepalLength EQ 6"
-        conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=')
+        conditions = conditions.replace('GT', '>').replace('LT', '<').replace('GE', '>=').replace('LE', '<=').replace('EQ', '=').replace('NE', '<>')
         operators = {
             '=': lambda x, y: x == y,
             '>': lambda x, y: x > y,
             '<': lambda x, y: x < y,
             '>=': lambda x, y: x >= y,
             '<=': lambda x, y: x <= y,
+            '<>': lambda x, y: x != y
         }
         conditions = conditions.split(" ")
-        print("conditions",conditions)
-        left_column = conditions[0]
-        operator = conditions[1]
-        right_operand = conditions[2]
-
-        print("left_col",left_column,"operator",operator,"right_operand",right_operand)
-
+        # print("conditions",conditions)
         
-        if left_column not in result.columns:
-            
-            if left_column == "sepalLength":
-                left_column = "sL"
-            elif left_column == "sepalWidth":
-                left_column = "sW"
-            elif left_column == "petalLength":
-                left_column = "pL"
-            elif left_column == "petalWidth":
-                left_column = "pW"
-            elif left_column == "variety":
-                left_column = "v"
 
-        if left_column in result.columns:
-            # Check if right_operand is a column name or a constant
-            if right_operand in result.columns:
-                right_values = result[right_operand]
+        result = data.copy()
+        condition_stack = []
+
+        while conditions:
+            left_column = conditions.pop(0)
+
+            if left_column in ["AND", "OR"]:
+                logical_operator = left_column
+                condition_stack.append(logical_operator)
             else:
-                try:
-                    # Convert to the appropriate type (int, float, etc.)
-                    right_value = float(right_operand) if '.' in right_operand else int(right_operand)
-                    right_values = [right_value] * len(result)
-                except ValueError:
-                    raise ValueError("Right operand is neither a valid column name nor a constant.")
+                if left_column in result.columns:
+                    operator = conditions.pop(0)
+                    right_operand = conditions.pop(0)
 
-            # Apply the condition
-            result = result[[operators[operator](left_value, right_value) for left_value, right_value in zip(result[left_column], right_values)]]
+                    # Check if right_operand is a column name or a constant
+                    if right_operand in result.columns:
+                        right_values = result[right_operand]
+                    else:
+                        if "'" in right_operand:
+                            right_values = [right_operand.strip("'")] * len(result)
+                        else:
+                            try:
+                                # Convert to the appropriate type (int, float, etc.)
+                                right_value = float(right_operand) if '.' in right_operand else int(right_operand)
+                                right_values = [right_value] * len(result)
+                            except ValueError:
+                                raise ValueError("Right operand is neither a valid column name nor a constant.")
+
+                    # Apply the condition
+                    condition_result = [operators[operator](left_value, right_value) for left_value, right_value in zip(result[left_column], right_values)]
+
+                    # Combine the result based on the logical operator
+                    if condition_stack and condition_stack[-1] == "AND":
+                        result = result[condition_result]
+                    elif condition_stack and condition_stack[-1] == "OR":
+                        result = pd.concat([result, data[condition_result]])
+                    else:
+                        result = result[condition_result]
 
     # if join:
     #     # wrapper.split_by_chunks_and_join(join)
@@ -721,7 +728,7 @@ def parse_and_evaluate_query(data,query,components):
                     condition_parts.append(query_part)
 
                 conditions = ' '.join(condition_parts)
-                print("conditions", conditions)
+                # print("conditions", conditions)
                 
                 # sys.exit(1)
             # if keyword == 'LIKE':
@@ -815,14 +822,14 @@ def parse_and_evaluate_query(data,query,components):
                 unique = query_parts.pop(0)
 
         # Execute the query on the loaded data
-        print("***************conditions", conditions)
-        print("***************categorize_by", categorize_by)
-        print("***************bound", bound)
-        print("***************rank_by", rank_by)
-        print("***************join", join_condition)
-        print("****************min",min_field)
-        print("****************project",project_fields)
-        print("****************similar",similar_pattern)
+        # print("***************conditions", conditions)
+        # print("***************categorize_by", categorize_by)
+        # print("***************bound", bound)
+        # print("***************rank_by", rank_by)
+        # print("***************join", join_condition)
+        # print("****************min",min_field)
+        # print("****************project",project_fields)
+        # print("****************similar",similar_pattern)
         result = execute_extract_query(data, conditions, categorize_by, bound, rank_by,join_condition,project_fields,average_field,min_field,max_field,sum_by,count,unique,similar_pattern)
         print("Query Result:")
         return result
