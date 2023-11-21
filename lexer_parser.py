@@ -337,19 +337,34 @@ def execute_extract_query(data, conditions=None, categorize_by=None, bound=None,
 
         print("left_col",left_column,"operator",operator,"right_operand",right_operand)
 
-        # Check if right_operand is a column name or a constant
-        if right_operand in result.columns:
-            right_values = result[right_operand]
-        else:
-            try:
-                # Convert to the appropriate type (int, float, etc.)
-                right_value = float(right_operand) if '.' in right_operand else int(right_operand)
-                right_values = [right_value] * len(result)
-            except ValueError:
-                raise ValueError("Right operand is neither a valid column name nor a constant.")
+        
+        if left_column not in result.columns:
+            
+            if left_column == "sepalLength":
+                left_column = "sL"
+            elif left_column == "sepalWidth":
+                left_column = "sW"
+            elif left_column == "petalLength":
+                left_column = "pL"
+            elif left_column == "petalWidth":
+                left_column = "pW"
+            elif left_column == "variety":
+                left_column = "v"
 
-        # Apply the condition
-        result = result[[operators[operator](left_value, right_value) for left_value, right_value in zip(result[left_column], right_values)]]
+        if left_column in result.columns:
+            # Check if right_operand is a column name or a constant
+            if right_operand in result.columns:
+                right_values = result[right_operand]
+            else:
+                try:
+                    # Convert to the appropriate type (int, float, etc.)
+                    right_value = float(right_operand) if '.' in right_operand else int(right_operand)
+                    right_values = [right_value] * len(result)
+                except ValueError:
+                    raise ValueError("Right operand is neither a valid column name nor a constant.")
+
+            # Apply the condition
+            result = result[[operators[operator](left_value, right_value) for left_value, right_value in zip(result[left_column], right_values)]]
 
     # if join:
     #     # wrapper.split_by_chunks_and_join(join)
