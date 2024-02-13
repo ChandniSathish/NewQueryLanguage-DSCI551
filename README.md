@@ -4,12 +4,12 @@ Implemented custom lexer, parser and interpreter,  and optimized memory manageme
 SQL keywords and its synonyms:
 Select - extract
 * - $
-where - when 
-Group by - Categorize by
-like - similar to
-order - rank
-limit - bound
-offset - slice
+where - when, 
+Group by - Categorize by,
+like - similar to,
+order - rank,
+limit - bound,
+offset - slice,
 From - Using
 
 This documents the steps to run the code to execute the new query language for SQL and NoSQL databases. 
