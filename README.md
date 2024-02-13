@@ -1,8 +1,7 @@
 Created query language capable of handling both structured and unstructured data with hash-based join and aggregation
 Implemented custom lexer, parser and interpreter,  and optimized memory management by chunk-based data processing
 
-**SQL keywords and its synonyms:
-**
+SQL keywords and its synonyms:
 Select - extract
 * - $
 where - when 
@@ -15,8 +14,8 @@ From - Using
 
 This documents the steps to run the code to execute the new query language for SQL and NoSQL databases. 
 
-**Code structure:
-**
+Code structure:
+
 main_wrapper.py
 dataset
 |_iris.json
