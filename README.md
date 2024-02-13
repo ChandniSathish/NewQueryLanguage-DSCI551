@@ -14,48 +14,9 @@ From - Using
 
 This documents the steps to run the code to execute the new query language for SQL and NoSQL databases. 
 
-Code structure:
-
-main_wrapper.py
-dataset
-|_iris.json
-|_hibiscus.csv
-nosql
-|_nosql_db.py
-|_crud_nosql.py
-|_wrapper_nosql.py
-Sql
-|_crud_sql.py
-|_wrapper_sql.py
 
 Mapping
 This is the mapping for our custom query language:
-
-
-
-Existing SQL
-Custom SQL
-Select
-extract
-*
-$
-where
-when 
-Group by
-Categorize by
-like
-similar to
-order
-rank
-limit
-bound
-offset
-slice
-From
-Using
-
-
-
 
 Step 1: From command line, run:
 python main_wrapper.py 
